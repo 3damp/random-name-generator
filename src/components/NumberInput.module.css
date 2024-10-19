@@ -1,0 +1,49 @@
+.label {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    padding: 10px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 1.2em;
+    /* max-width: 400px; */
+}
+
+.inner-container {
+    display: flex;
+    justify-content: center;
+}
+.inner-container input {
+    font-size: inherit;
+    width: 50px;
+    flex-basis: 30px;
+    text-align: center;
+    box-sizing: border-box;
+}
+.inner-container button {
+    font-size: inherit;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+.textarea {
+    width: 100%;
+    height: 200px;
+    font-size: 1.5em;
+    padding: 0;
+    margin: 0;
+    border: 1px solid var(--accent-color-1);
+    border-radius: 5px;
+    flex-shrink: 0;
+    resize: vertical;
+}
