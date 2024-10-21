@@ -20,11 +20,13 @@ const TextInput = ({
     }
 
     return (
-        <label className={styles["label"]}>
-            {name} <span className={styles["error"]}>{error}</span>
+        <div className={styles["field"]}>
+            <label className={styles["label"]}>
+                {name} <span className={styles["error"]}>{error}</span>
+            </label>
             <div
                 className={styles["inner-container"]}
-                style={{ width: textarea ? "100%" : "auto" }}
+                style={{ width: "100%", display: "block" }}
             >
                 {textarea ? (
                     <textarea
@@ -43,11 +45,11 @@ const TextInput = ({
                         type="text"
                         value={value}
                         onChange={onInputChanged}
-                        style={{ width: 200, textAlign: "left" }}
+                        style={{ width: "100%", textAlign: "left" }}
                     />
                 )}
             </div>
-        </label>
+        </div>
     )
 }
 

@@ -59,17 +59,6 @@ const NameGenerator: React.FC = () => {
             </header>
             <div className={styles["scrollable-container"]}>
                 <div className={styles["scrollable-content"]}>
-                    <TextInput
-                        name="Start with (optional)"
-                        value={parameters.startWith}
-                        onChange={(value) =>
-                            setParameters({
-                                ...parameters,
-                                startWith: value,
-                            })
-                        }
-                    />
-
                     <div className={styles["field-container"]}>
                         <NumberInput
                             name="Min Length"
@@ -88,6 +77,16 @@ const NameGenerator: React.FC = () => {
                                 setParameters({
                                     ...parameters,
                                     maxLength: value,
+                                })
+                            }
+                        />
+                        <TextInput
+                            name="Start with (optional)"
+                            value={parameters.startWith}
+                            onChange={(value) =>
+                                setParameters({
+                                    ...parameters,
+                                    startWith: value,
                                 })
                             }
                         />
