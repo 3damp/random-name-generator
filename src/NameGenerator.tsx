@@ -1,23 +1,55 @@
 import { useEffect, useState } from "react"
-// import RandomNameGenerator from "./scripts/randomNameGenerator"
 import RandomNameGenerator from "./scripts/newRandomNumberGenerator"
 import styles from "./NameGenerator.module.css"
 import NumberInput from "./components/NumberInput"
 import TextInput from "./components/TextInput"
+import useUrlParameters from "./hooks/useUrlParameters"
 
 const nameGenerator = new RandomNameGenerator()
 
 const NameGenerator: React.FC = () => {
+    const { setParam, getParam } = useUrlParameters()
+
+    const [parameters, setParameters] = useState(() => {
+        const params = getParam("settings")
+        if (params) {
+            try {
+                const newParams = JSON.parse(params)
+                nameGenerator.setParameters(newParams)
+                return newParams
+            } catch (e) {
+                console.error(e)
+            }
+        }
+        return nameGenerator.getParameters()
+    })
+
+    const [advancedParameters, setAdvancedParameters] = useState(
+        JSON.stringify(parameters, null, "\t"),
+    )
+
+    const [advancedParametersError, setAdvancedParametersError] = useState("")
     const [name, setName] = useState(nameGenerator.generateName())
 
-    const [parameters, setParameters] = useState(nameGenerator.getParameters())
-
     useEffect(() => {
+        setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
+        setParam("settings", JSON.stringify(parameters))
         nameGenerator.setParameters(parameters)
-    }, [parameters])
+    }, [parameters, setParam])
 
-    const onButtonClick = () => {
+    const onClickGenerate = () => {
         setName(nameGenerator.generateName())
+    }
+
+    const onAdvancedParametersChange = (value: string) => {
+        setAdvancedParameters(value)
+        try {
+            setParameters(JSON.parse(value))
+            setAdvancedParametersError("")
+        } catch (e) {
+            setAdvancedParametersError("⚠️Invalid JSON")
+            console.error(e)
+        }
     }
 
     return (
@@ -28,39 +60,12 @@ const NameGenerator: React.FC = () => {
             <div className={styles["scrollable-container"]}>
                 <div className={styles["scrollable-content"]}>
                     <TextInput
-                        name="Syllables"
-                        value={parameters.syllables}
-                        textarea
-                        height={140}
-                        onChange={(value) =>
-                            setParameters({
-                                ...parameters,
-                                syllables: value,
-                            })
-                        }
-                    />
-                    <TextInput
                         name="Start with (optional)"
                         value={parameters.startWith}
-                        textarea
-                        height={50}
                         onChange={(value) =>
                             setParameters({
                                 ...parameters,
                                 startWith: value,
-                            })
-                        }
-                    />
-
-                    <TextInput
-                        name="Cannot start with (optional)"
-                        value={parameters.cannotStartWith}
-                        textarea
-                        height={50}
-                        onChange={(value) =>
-                            setParameters({
-                                ...parameters,
-                                cannotStartWith: value,
                             })
                         }
                     />
@@ -86,26 +91,21 @@ const NameGenerator: React.FC = () => {
                                 })
                             }
                         />
-                        <label>
-                            Force length
-                            <input
-                                type="checkbox"
-                                checked={parameters.strictLength}
-                                onChange={(e) => {
-                                    setParameters({
-                                        ...parameters,
-                                        strictLength: e.target.checked,
-                                    })
-                                }}
-                            />
-                        </label>
                     </div>
+                    <TextInput
+                        name="Advanced settings"
+                        value={advancedParameters}
+                        textarea
+                        height={300}
+                        onChange={onAdvancedParametersChange}
+                        error={advancedParametersError}
+                    />
                 </div>
             </div>
             <footer className={styles["footer"]}>
                 <button
                     className={styles["generate-button"]}
-                    onClick={onButtonClick}
+                    onClick={onClickGenerate}
                 >
                     GENERATE
                 </button>

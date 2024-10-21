@@ -1,91 +1,106 @@
 type Parameters = {
     minLength: number
     maxLength: number
-    strictLength: boolean
     startWith: string
-    syllables: string
     cannotStartWith: string
+    lettersAfter: Record<string, string>
 }
 
 const DEFAULT_PARAMETERS: Parameters = {
     minLength: 3,
     maxLength: 6,
-    strictLength: false,
     startWith: "",
-    syllables:
-        "a i u e o ka ki ku ke ko sa shi su se so ta chi tsu te to na ni nu ne no ha hi fu he ho ma mi mu me mo ya yu yo ra ri ru re ro wa wo n",
-    cannotStartWith: "n",
+    cannotStartWith: "",
+    lettersAfter: {
+        a: "eioubbccddffgghhjjkkllmmnnppqqrrssttvvwwxxyyzz",
+        b: "aeiou",
+        c: "aaaeeeiiiooouuuhrnk",
+        d: "aeiou",
+        e: "aibbccddffgghhjjkkllmmnnppqqrrssttvvwwxxyyzz",
+        f: "aeiou",
+        g: "aeiou",
+        h: "aeiou",
+        i: "aeobbccddffggjjkkllmmnnppqqrrssttvvwwxxyyzz",
+        j: "aeiou",
+        k: "aeiou",
+        l: "aeiou",
+        m: "aeiou",
+        n: "aeiou",
+        o: "aeibbccddffgghhjjkkllmmnnppqqrrssttvvwwxxyyzz",
+        p: "aeiou",
+        q: "u",
+        r: "aaaaeeeeiiiioooouuuutrpmnbcsl",
+        s: "aaaeeeiiiooouuusctp",
+        t: "aeiou",
+        u: "aibbccddffgghhjjkkllmmnnppqqrrssttvvwwyyzz",
+        v: "aeiou",
+        w: "aeiou",
+        x: "aeiou",
+        y: "aeou",
+        z: "aaaeeeiiiooouuuyrh",
+    },
 }
 
 export default class RandomNumberGenerator {
-    parameters: Parameters
-    syllables: string[]
-    startPool: string[]
+    #parameters: Parameters = DEFAULT_PARAMETERS
+    #startPool: string = ""
 
     constructor() {
-        this.parameters = { ...DEFAULT_PARAMETERS }
-        this.syllables = stringToArray(this.parameters.syllables)
-        this.startPool = [...this.syllables].filter(
-            (syllable) => !this.parameters.cannotStartWith.includes(syllable),
-        )
+        this.setParameters(DEFAULT_PARAMETERS)
     }
 
     generateName() {
-        if (this.parameters.syllables.length < 1 || this.startPool.length < 1)
-            return "?"
-
         const nameLength = Math.floor(
             Math.random() *
-                (1 + this.parameters.maxLength - this.parameters.minLength) +
-                this.parameters.minLength,
+                (1 + this.#parameters.maxLength - this.#parameters.minLength) +
+                this.#parameters.minLength,
         )
-        let result = ""
+        let result = this.#parameters.startWith
 
-        result += this.pickRandomFromArray(this.startPool)
+        if (result.length === 0) result += pickRandomChar(this.#startPool)
 
-        let remainingTries = 100
-        while (remainingTries > 0 && result.length < nameLength) {
-            remainingTries--
-            result += this.pickRandomFromArray(this.syllables)
-        }
-        if (this.parameters.strictLength) {
-            result = result.slice(0, nameLength)
+        let maxTries = 100
+
+        while (maxTries > 0 && result.length < nameLength) {
+            const lastChar = result.charAt(result.length - 1)
+            const possibleChars = this.#parameters.lettersAfter[lastChar]
+            if (possibleChars) {
+                result += pickRandomChar(possibleChars)
+            }
+            maxTries--
         }
 
         return result.charAt(0).toUpperCase() + result.slice(1)
     }
 
     getParameters() {
-        return { ...this.parameters }
-    }
-    setParameters(parameters: Partial<Parameters> = {}) {
-        this.parameters = { ...DEFAULT_PARAMETERS, ...parameters }
-
-        this.syllables = stringToArray(this.parameters.syllables)
-        const startWithArray = stringToArray(this.parameters.startWith)
-        const cannotStartWithArray = stringToArray(
-            this.parameters.cannotStartWith,
-        )
-        if (startWithArray.length > 0) {
-            this.startPool = startWithArray
-        } else {
-            this.startPool = [...this.syllables].filter(
-                (syllable) =>
-                    !cannotStartWithArray.some(
-                        (text) => syllable.startsWith(text) === true,
-                    ),
-            )
+        return {
+            ...this.#parameters,
+            lettersAfter: { ...this.#parameters.lettersAfter },
         }
     }
+    setParameters(parameters: Partial<Parameters> = {}) {
+        this.#parameters = { ...this.#parameters, ...parameters }
 
-    pickRandomFromArray(array: string[]) {
-        return array[Math.floor(Math.random() * array.length)]
+        if (this.#parameters.minLength < 1) this.#parameters.minLength = 1
+        if (this.#parameters.maxLength < 1) this.#parameters.maxLength = 1
+        if (this.#parameters.minLength > this.#parameters.maxLength)
+            this.#parameters.minLength = this.#parameters.maxLength
+
+        if (this.#parameters.startWith.length <= 0) {
+            let allLetters = Object.keys(this.#parameters.lettersAfter).join("")
+            for (const letter of this.#parameters.cannotStartWith) {
+                allLetters = allLetters.replace(letter, "")
+            }
+            this.#startPool = cleanCharacters(allLetters)
+        }
     }
 }
 
-export function stringToArray(string: string) {
-    if (!string) return []
-    string = string.replace("\n", " ")
-    string = string.trim()
-    return string.split(" ")
+function pickRandomChar(string: string) {
+    return string.charAt(Math.floor(Math.random() * string.length))
+}
+
+function cleanCharacters(characters: string) {
+    return characters.replace(/[\s\r\t]/gi, "")
 }

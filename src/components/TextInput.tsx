@@ -6,12 +6,14 @@ const TextInput = ({
     onChange,
     height = "auto",
     textarea = false,
+    error = "",
 }: {
     name: string
     value?: string
     onChange?: (value: string) => void
     height?: string | number
     textarea?: boolean
+    error?: string
 }) => {
     const onInputChanged = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (onChange) onChange(event.target.value)
@@ -19,7 +21,7 @@ const TextInput = ({
 
     return (
         <label className={styles["label"]}>
-            {name}
+            {name} <span className={styles["error"]}>{error}</span>
             <div
                 className={styles["inner-container"]}
                 style={{ width: textarea ? "100%" : "auto" }}
@@ -32,6 +34,7 @@ const TextInput = ({
                             if (onChange) onChange(e.target.value)
                         }}
                         style={{ height }}
+                        spellCheck={false}
                     >
                         +
                     </textarea>
@@ -40,7 +43,7 @@ const TextInput = ({
                         type="text"
                         value={value}
                         onChange={onInputChanged}
-                        style={{ width: 120 }}
+                        style={{ width: 200, textAlign: "left" }}
                     />
                 )}
             </div>
