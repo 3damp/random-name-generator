@@ -85,7 +85,7 @@ export default class RandomNumberGenerator {
 
 export function stringToArray(string: string) {
     if (!string) return []
-    string.replace("\n", " ")
-    string.trim()
+    string = string.replace("\n", " ")
+    string = string.trim()
     return string.split(" ")
 }
