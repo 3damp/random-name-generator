@@ -1,8 +1,9 @@
-type Parameters = {
+export type Parameters = {
     minLength: number
     maxLength: number
     startWith: string
     cannotStartWith: string
+    canEndWith: string
     lettersAfter: Record<string, string>
 }
 
@@ -11,6 +12,7 @@ const DEFAULT_PARAMETERS: Parameters = {
     maxLength: 6,
     startWith: "",
     cannotStartWith: "",
+    canEndWith: "", // TODO
     lettersAfter: {
         a: "eioubbccddffgghhjjkkllmmnnppqqrrssttvvwwxxyyzz",
         b: "aeiou",

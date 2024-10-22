@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react"
-import RandomNameGenerator from "./scripts/newRandomNumberGenerator"
+import RandomNameGenerator, {
+    Parameters,
+} from "./scripts/newRandomNumberGenerator"
 import styles from "./NameGenerator.module.css"
 import NumberInput from "./components/NumberInput"
 import TextInput from "./components/TextInput"
 import useUrlParameters from "./hooks/useUrlParameters"
+import TextArea from "./components/TextArea"
 
 const nameGenerator = new RandomNameGenerator()
 
@@ -44,12 +47,26 @@ const NameGenerator: React.FC = () => {
     const onAdvancedParametersChange = (value: string) => {
         setAdvancedParameters(value)
         try {
-            setParameters(JSON.parse(value))
+            const newParams = JSON.parse(value)
+            setParameters(newParams)
             setAdvancedParametersError("")
         } catch (e) {
             setAdvancedParametersError("⚠️Invalid JSON")
             console.error(e)
         }
+    }
+
+    const updateParameters = (params: Partial<Parameters>) => {
+        if (params.minLength !== undefined && params.minLength < 1)
+            params.minLength = 1
+        if (params.maxLength !== undefined && params.maxLength < 1)
+            params.maxLength = 1
+        if (params.minLength && params.minLength > parameters.maxLength)
+            params.maxLength = params.minLength
+        if (params.maxLength && params.maxLength < parameters.minLength)
+            params.minLength = params.maxLength
+
+        setParameters({ ...parameters, ...params })
     }
 
     return (
@@ -64,8 +81,7 @@ const NameGenerator: React.FC = () => {
                             name="Min Length"
                             value={parameters.minLength}
                             onChange={(value) =>
-                                setParameters({
-                                    ...parameters,
+                                updateParameters({
                                     minLength: value,
                                 })
                             }
@@ -74,8 +90,7 @@ const NameGenerator: React.FC = () => {
                             name="Max Length"
                             value={parameters.maxLength}
                             onChange={(value) =>
-                                setParameters({
-                                    ...parameters,
+                                updateParameters({
                                     maxLength: value,
                                 })
                             }
@@ -84,17 +99,15 @@ const NameGenerator: React.FC = () => {
                             name="Start with (optional)"
                             value={parameters.startWith}
                             onChange={(value) =>
-                                setParameters({
-                                    ...parameters,
+                                updateParameters({
                                     startWith: value,
                                 })
                             }
                         />
                     </div>
-                    <TextInput
+                    <TextArea
                         name="Advanced settings"
                         value={advancedParameters}
-                        textarea
                         height={300}
                         onChange={onAdvancedParametersChange}
                         error={advancedParametersError}
