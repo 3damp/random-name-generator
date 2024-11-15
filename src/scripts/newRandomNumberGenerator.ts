@@ -4,6 +4,7 @@ export type Parameters = {
     startWith: string
     cannotStartWith: string
     canEndWith: string
+    cannotEndWith: string
     lettersAfter: Record<string, string>
 }
 
@@ -12,7 +13,8 @@ const DEFAULT_PARAMETERS: Parameters = {
     maxLength: 6,
     startWith: "",
     cannotStartWith: "",
-    canEndWith: "", // TODO
+    canEndWith: "",
+    cannotEndWith: "",
     lettersAfter: {
         a: "eioubbccddffgghhjjkkllmmnnppqqrrssttvvwwxxyyzz",
         b: "aeiou",
@@ -44,58 +46,110 @@ const DEFAULT_PARAMETERS: Parameters = {
 }
 
 export default class RandomNumberGenerator {
-    #parameters: Parameters = DEFAULT_PARAMETERS
-    #startPool: string = ""
+    private parameters: Parameters = DEFAULT_PARAMETERS
+    private startPool: string = ""
+    private canEndWith: string = ""
 
     constructor() {
         this.setParameters(DEFAULT_PARAMETERS)
     }
 
     generateName() {
-        const nameLength = Math.floor(
-            Math.random() *
-                (1 + this.#parameters.maxLength - this.#parameters.minLength) +
-                this.#parameters.minLength,
-        )
-        let result = this.#parameters.startWith
+        const nameLength = this.calculateNameLength()
 
-        if (result.length === 0) result += pickRandomChar(this.#startPool)
+        let result = this.parameters.startWith
+        if (result.length === 0) result += pickRandomChar(this.startPool)
 
         let maxTries = 100
-
         while (maxTries > 0 && result.length < nameLength) {
-            const lastChar = result.charAt(result.length - 1)
-            const possibleChars = this.#parameters.lettersAfter[lastChar]
+            const isLastChar = result.length === nameLength - 1
+            const previousChar = result.charAt(result.length - 1)
+            const possibleChars = this.calculateLetterPoolAfter(
+                previousChar,
+                isLastChar,
+            )
             if (possibleChars) {
                 result += pickRandomChar(possibleChars)
+            } else {
+                result = result.slice(0, -1) // remove last char
             }
             maxTries--
         }
 
-        return result.charAt(0).toUpperCase() + result.slice(1)
+        return this.capitalizeName(result)
+    }
+
+    private calculateLetterPoolAfter(
+        char: string,
+        isLastChar: boolean,
+    ): string {
+        if (isLastChar) {
+            if (this.canEndWith.length > 0) {
+                const filteredChars = this.parameters.lettersAfter[char]
+                    .split("")
+                    .filter((letter) => {
+                        return this.canEndWith.includes(letter)
+                    })
+                return filteredChars.join("")
+            }
+            if (this.parameters.cannotEndWith.length > 0) {
+                const filteredChars = this.parameters.lettersAfter[char]
+                    .split("")
+                    .filter((letter) => {
+                        return !this.parameters.cannotEndWith.includes(letter)
+                    })
+                return filteredChars.join("")
+            }
+            return this.parameters.lettersAfter[char]
+        } else {
+            return this.parameters.lettersAfter[char]
+        }
     }
 
     getParameters() {
         return {
-            ...this.#parameters,
-            lettersAfter: { ...this.#parameters.lettersAfter },
+            ...this.parameters,
+            lettersAfter: { ...this.parameters.lettersAfter },
         }
     }
-    setParameters(parameters: Partial<Parameters> = {}) {
-        this.#parameters = { ...this.#parameters, ...parameters }
+    setParameters(newParameters: Partial<Parameters> = {}) {
+        this.parameters = { ...this.parameters, ...newParameters }
 
-        if (this.#parameters.minLength < 1) this.#parameters.minLength = 1
-        if (this.#parameters.maxLength < 1) this.#parameters.maxLength = 1
-        if (this.#parameters.minLength > this.#parameters.maxLength)
-            this.#parameters.minLength = this.#parameters.maxLength
+        if (this.parameters.minLength < 1) this.parameters.minLength = 1
+        if (this.parameters.maxLength < 1) this.parameters.maxLength = 1
+        if (this.parameters.minLength > this.parameters.maxLength)
+            this.parameters.minLength = this.parameters.maxLength
 
-        if (this.#parameters.startWith.length <= 0) {
-            let allLetters = Object.keys(this.#parameters.lettersAfter).join("")
-            for (const letter of this.#parameters.cannotStartWith) {
+        if (this.parameters.startWith.length <= 0) {
+            let allLetters = Object.keys(this.parameters.lettersAfter).join("")
+            for (const letter of this.parameters.cannotStartWith) {
                 allLetters = allLetters.replace(letter, "")
             }
-            this.#startPool = cleanCharacters(allLetters)
+            this.startPool = sanitizeCharacterString(allLetters)
         }
+        if (
+            this.parameters.canEndWith.length > 0 &&
+            this.parameters.cannotEndWith.length > 0
+        ) {
+            const filteredChars = this.parameters.canEndWith
+                .split("")
+                .filter((char) => {
+                    return !this.parameters.cannotEndWith.includes(char)
+                })
+            this.canEndWith = filteredChars.join("")
+        }
+    }
+
+    private calculateNameLength() {
+        return Math.floor(
+            Math.random() *
+                (1 + this.parameters.maxLength - this.parameters.minLength) +
+                this.parameters.minLength,
+        )
+    }
+
+    private capitalizeName(name: string) {
+        return name.charAt(0).toUpperCase() + name.slice(1)
     }
 }
 
@@ -103,6 +157,6 @@ function pickRandomChar(string: string) {
     return string.charAt(Math.floor(Math.random() * string.length))
 }
 
-function cleanCharacters(characters: string) {
+function sanitizeCharacterString(characters: string) {
     return characters.replace(/[\s\r\t]/gi, "")
 }
