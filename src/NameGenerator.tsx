@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react"
-import RandomNameGenerator, {
-    Parameters,
-} from "./scripts/newRandomNumberGenerator"
+import RandomNameGenerator, { Parameters } from "./scripts/randomNameGenerator"
 import styles from "./NameGenerator.module.css"
 import NumberInput from "./components/NumberInput"
 import TextInput from "./components/TextInput"
