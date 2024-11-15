@@ -1,0 +1,33 @@
+import { Parameters } from "src/scripts/randomNameGenerator"
+
+export const JAPANESE_PARAMETERS: Parameters = {
+    startWith: "",
+    lettersAfter: {
+        a: "iueobbbdddfffggghhhjjjkkkmmmnnnppprrrssstttwwwyyyzzz",
+        b: "aiueo",
+        d: "aiueo",
+        e: "aiuobbbdddfffggghhhjjjkkkmmmnnnppprrrssstttwwwyyyzzz",
+        f: "u",
+        g: "aiueo",
+        h: "aiueo",
+        i: "aiueobbbdddfffggghhhjjjkkkmmmnnnppprrrssstttwwwyyyzzz",
+        j: "aiueo",
+        k: "aiueo",
+        m: "aiueo",
+        n: "aiueo",
+        o: "aiuuuebbbdddfffggghhhjjjkkkmmmnnnppprrrssstttwwwyyyzzz",
+        p: "aiueo",
+        r: "aiueo",
+        s: "aiueo",
+        t: "aueo",
+        u: "bbbdddfffggghhhjjjkkkmmmnnnppprrrssstttwwwyyyzzz",
+        w: "auo",
+        y: "auo",
+        z: "aiueo",
+    },
+    cannotEndWith: "bdfghjklmprstwyz",
+    canEndWith: "",
+    minLength: 3,
+    maxLength: 5,
+    cannotStartWith: "",
+}

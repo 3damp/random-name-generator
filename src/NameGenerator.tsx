@@ -34,11 +34,14 @@ const NameGenerator: React.FC = () => {
     )
 
     const [advancedParametersError, setAdvancedParametersError] = useState("")
-    const [name, setName] = useState(nameGenerator.generateName())
+    const [name, setName] = useState("???")
 
     useEffect(() => {
         setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
-        nameGenerator.setParameters(parameters)
+        const [error] = nameGenerator.setParameters(parameters)
+        if (error) {
+            setAdvancedParametersError(error.message)
+        }
     }, [parameters, setParam])
 
     const onClickGenerate = () => {

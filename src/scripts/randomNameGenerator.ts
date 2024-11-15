@@ -49,12 +49,15 @@ export default class RandomNumberGenerator {
     private parameters: Parameters = DEFAULT_PARAMETERS
     private startPool: string = ""
     private canEndWith: string = ""
+    private validParameters: boolean = true
 
     constructor() {
         this.setParameters(DEFAULT_PARAMETERS)
     }
 
     generateName() {
+        if (!this.validParameters) return "Invalid parameters"
+
         const nameLength = this.calculateNameLength()
 
         let result = this.parameters.startWith
@@ -85,19 +88,17 @@ export default class RandomNumberGenerator {
     ): string {
         if (isLastChar) {
             if (this.canEndWith.length > 0) {
-                const filteredChars = this.parameters.lettersAfter[char]
-                    .split("")
-                    .filter((letter) => {
-                        return this.canEndWith.includes(letter)
-                    })
+                const allChars = this.parameters.lettersAfter[char]
+                const filteredChars = allChars.split("").filter((letter) => {
+                    return this.canEndWith.includes(letter)
+                })
                 return filteredChars.join("")
             }
             if (this.parameters.cannotEndWith.length > 0) {
-                const filteredChars = this.parameters.lettersAfter[char]
-                    .split("")
-                    .filter((letter) => {
-                        return !this.parameters.cannotEndWith.includes(letter)
-                    })
+                const allChars = this.parameters.lettersAfter[char]
+                const filteredChars = allChars.split("").filter((letter) => {
+                    return !this.parameters.cannotEndWith.includes(letter)
+                })
                 return filteredChars.join("")
             }
             return this.parameters.lettersAfter[char]
@@ -138,6 +139,11 @@ export default class RandomNumberGenerator {
                 })
             this.canEndWith = filteredChars.join("")
         }
+
+        const [error] = validateLettersAfter(this.parameters.lettersAfter)
+        this.validParameters = !error
+
+        return [error]
     }
 
     private calculateNameLength() {
@@ -154,9 +160,38 @@ export default class RandomNumberGenerator {
 }
 
 function pickRandomChar(string: string) {
-    return string.charAt(Math.floor(Math.random() * string.length))
+    const randomNum = Math.random()
+    const randomIndex = Math.floor(randomNum * string.length)
+    return string.charAt(randomIndex)
 }
 
 function sanitizeCharacterString(characters: string) {
     return characters.replace(/[\s\r\t]/gi, "")
+}
+
+function validateLettersAfter(charsAfter: Record<string, string>) {
+    const missingChars: string[] = []
+    const allUniqueChars = Object.values(charsAfter).reduce(
+        (acc, charString) => {
+            for (const char of charString) {
+                if (!acc.includes(char)) acc += char
+            }
+            return acc
+        },
+        "",
+    )
+    const allDefinedChars = Object.keys(charsAfter).join("")
+    for (const char of allUniqueChars) {
+        if (!allDefinedChars.includes(char)) {
+            missingChars.push(char)
+        }
+    }
+    if (missingChars.length > 0) {
+        return [
+            new Error(
+                `The following characters are missing from the "lettersAfter": "${missingChars.join('", "')}"`,
+            ),
+        ]
+    }
+    return []
 }
