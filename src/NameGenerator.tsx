@@ -7,11 +7,14 @@ import NumberInput from "./components/NumberInput"
 import TextInput from "./components/TextInput"
 import useUrlParameters from "./hooks/useUrlParameters"
 import TextArea from "./components/TextArea"
+import shareIcon from "./images/share.png"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 
 const nameGenerator = new RandomNameGenerator()
 
 const NameGenerator: React.FC = () => {
-    const { setParam, getParam } = useUrlParameters()
+    const { setParam, getParam, clearParams } = useUrlParameters()
 
     const [parameters, setParameters] = useState(() => {
         const params = getParam("settings")
@@ -19,6 +22,7 @@ const NameGenerator: React.FC = () => {
             try {
                 const newParams = JSON.parse(params)
                 nameGenerator.setParameters(newParams)
+                clearParams()
                 return newParams
             } catch (e) {
                 console.error(e)
@@ -36,7 +40,6 @@ const NameGenerator: React.FC = () => {
 
     useEffect(() => {
         setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
-        setParam("settings", JSON.stringify(parameters))
         nameGenerator.setParameters(parameters)
     }, [parameters, setParam])
 
@@ -69,10 +72,31 @@ const NameGenerator: React.FC = () => {
         setParameters({ ...parameters, ...params })
     }
 
+    function onClickShare(): void {
+        navigator.clipboard.writeText(
+            `${window.location.origin}${window.location.pathname}?settings=${encodeURIComponent(
+                JSON.stringify(parameters),
+            )}`,
+        )
+        toast.success("Link with settings copied!", { closeOnClick: true })
+    }
+
     return (
         <div className={styles["main-container"]}>
             <header className={styles["header"]}>
                 <h1>{name}</h1>
+                <img
+                    src={shareIcon}
+                    alt="share icon"
+                    onClick={onClickShare}
+                    style={{
+                        filter: "invert(1)",
+                        width: "1em",
+                        position: "absolute",
+                        right: 20,
+                        top: 20,
+                    }}
+                />
             </header>
             <div className={styles["scrollable-container"]}>
                 <div className={styles["scrollable-content"]}>
@@ -122,6 +146,12 @@ const NameGenerator: React.FC = () => {
                     GENERATE
                 </button>
             </footer>
+            <ToastContainer
+                position="top-center"
+                autoClose={2000}
+                hideProgressBar
+                style={{ bottom: "100px" }}
+            />
         </div>
     )
 }

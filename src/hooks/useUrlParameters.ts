@@ -23,7 +23,11 @@ const useUrlParameters = () => {
         [params],
     )
 
-    return { params, setParam, getParam }
+    const clearParams = useCallback(() => {
+        window.history.pushState({}, "", `${window.location.pathname}`)
+    }, [])
+
+    return { params, setParam, getParam, clearParams }
 }
 
 export default useUrlParameters
