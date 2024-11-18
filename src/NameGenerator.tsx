@@ -14,7 +14,7 @@ const nameGenerator = new RandomNameGenerator()
 const NameGenerator: React.FC = () => {
     const { setParam, getParam, clearParams } = useUrlParameters()
 
-    const [parameters, setParameters] = useState(() => {
+    const [parameters, setParameters] = useState<Parameters>(() => {
         const params = getParam("settings")
         if (params) {
             try {
@@ -23,7 +23,7 @@ const NameGenerator: React.FC = () => {
                 clearParams()
                 return newParams
             } catch (e) {
-                console.error(e)
+                throw e as Error
             }
         }
         return nameGenerator.getParameters()
@@ -34,11 +34,14 @@ const NameGenerator: React.FC = () => {
     )
 
     const [advancedParametersError, setAdvancedParametersError] = useState("")
-    const [name, setName] = useState(nameGenerator.generateName())
+    const [name, setName] = useState("???")
 
     useEffect(() => {
         setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
-        nameGenerator.setParameters(parameters)
+        const [error] = nameGenerator.setParameters(parameters)
+        if (error) {
+            setAdvancedParametersError(error.message)
+        }
     }, [parameters, setParam])
 
     const onClickGenerate = () => {
@@ -53,7 +56,7 @@ const NameGenerator: React.FC = () => {
             setAdvancedParametersError("")
         } catch (e) {
             setAdvancedParametersError("⚠️Invalid JSON")
-            console.error(e)
+            throw e as Error
         }
     }
 
@@ -119,10 +122,10 @@ const NameGenerator: React.FC = () => {
                         />
                         <TextInput
                             name="Start with (optional)"
-                            value={parameters.startWith}
+                            value={parameters.mustStartWith}
                             onChange={(value) =>
                                 updateParameters({
-                                    startWith: value,
+                                    mustStartWith: value,
                                 })
                             }
                         />
