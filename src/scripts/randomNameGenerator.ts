@@ -8,7 +8,7 @@ export type Parameters = {
     maxLength: number
     mustStartWith: string
     mustEndWith: string
-    mustHaveInFirstTwoLetters: string
+    mustHaveInFirstTwoLetters: GraphemeArray
     cannotStartWith: GraphemeArray
     canEndWith: GraphemePool
     cannotEndWith: GraphemeArray

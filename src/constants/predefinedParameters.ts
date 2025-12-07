@@ -5,7 +5,7 @@ export const TESTING_PARAMETERS: Parameters = {
     maxLength: 6,
     mustStartWith: "",
     mustEndWith: "",
-    mustHaveInFirstTwoLetters: "aeiouy",
+    mustHaveInFirstTwoLetters: ["a", "e", "i", "o", "u", "y"],
     cannotStartWith: [],
     canEndWith: {},
     cannotEndWith: ["b", "qu"],
@@ -53,8 +53,8 @@ export const DEFAULT_PARAMETERS: Parameters = {
     maxLength: 6,
     mustStartWith: "",
     mustEndWith: "",
-    mustHaveInFirstTwoLetters: "aeiouy",
-    cannotStartWith: [],
+    mustHaveInFirstTwoLetters: ["a", "e", "i", "o", "u", "y"],
+    cannotStartWith: ["u"],
     canEndWith: {},
     cannotEndWith: ["qu", "x", "z", "g", "j", "v", "w"],
     lettersAfter: {
@@ -767,7 +767,7 @@ export const JAPANESE_PARAMETERS: Parameters = {
     maxLength: 5,
     mustStartWith: "",
     mustEndWith: "",
-    mustHaveInFirstTwoLetters: "aeiou",
+    mustHaveInFirstTwoLetters: ["a", "e", "i", "o", "u", "y"],
     cannotStartWith: [],
     canEndWith: {},
     cannotEndWith: [
