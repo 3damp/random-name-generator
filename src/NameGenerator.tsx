@@ -6,8 +6,10 @@ import TextInput from "./components/TextInput"
 import useUrlParameters from "./hooks/useUrlParameters"
 import TextArea from "./components/TextArea"
 import shareIcon from "./images/share.png"
+import folderIcon from "./images/folder.png"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import DefaultsPanel from "./components/DefaultsPanel"
 
 const nameGenerator = new RandomNameGenerator()
 
@@ -35,6 +37,7 @@ const NameGenerator: React.FC = () => {
 
     const [advancedParametersError, setAdvancedParametersError] = useState("")
     const [name, setName] = useState("???")
+    const [isDefaultsPanelOpen, setIsDefaultsPanelOpen] = useState(false)
 
     useEffect(() => {
         setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
@@ -81,10 +84,27 @@ const NameGenerator: React.FC = () => {
         )
         toast.success("Link with settings copied!", { closeOnClick: true })
     }
+    function onDefaultsSelected(params: Parameters): void {
+        setParameters(params)
+        setIsDefaultsPanelOpen(false)
+    }
 
     return (
         <div className={styles["main-container"]}>
             <header className={styles["header"]}>
+                {isDefaultsPanelOpen && <DefaultsPanel onSelect={onDefaultsSelected}/>}
+                <img
+                    src={folderIcon}
+                    alt="open icon"
+                    onClick={() => setIsDefaultsPanelOpen(!isDefaultsPanelOpen)}
+                    style={{
+                        filter: "invert(1)",
+                        width: "1em",
+                        position: "absolute",
+                        left: 20,
+                        top: 20,
+                    }}
+                />
                 <h1>{name}</h1>
                 <img
                     src={shareIcon}
