@@ -54,7 +54,7 @@ export default function DefaultsPanel({
                         fontSize: "1.3em",
                     }}
                 >
-                    Set default parameters
+                    Presets
                 </div>
                 <div
                     style={{
