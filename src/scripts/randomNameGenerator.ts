@@ -8,6 +8,7 @@ export type Parameters = {
     maxLength: number
     mustStartWith: string
     mustEndWith: string
+    mustHaveInFirstTwoLetters: string
     cannotStartWith: GraphemeArray
     canEndWith: GraphemePool
     cannotEndWith: GraphemeArray
@@ -34,8 +35,11 @@ export default class RandomNumberGenerator {
         let result = this.parameters.mustStartWith
         let previousLetter = result.charAt(result.length - 1)
         let secondToLastLetter = ""
+        let hasVowelInFirstTwo = false
         if (result.length === 0) {
-            result += pickRandomLetter(this.startPool)
+            const newLetter = pickRandomLetter(this.startPool)
+            if (this.parameters.mustHaveInFirstTwoLetters.includes(newLetter)) hasVowelInFirstTwo = true
+            result += newLetter
             previousLetter = result
         }
 
@@ -48,6 +52,12 @@ export default class RandomNumberGenerator {
             )
             if (Object.keys(possibleChars).length > 0) {
                 const newLetter = pickRandomLetter(possibleChars)
+                if (result.length <= 1 && this.parameters.mustHaveInFirstTwoLetters.includes(newLetter)) {
+                    hasVowelInFirstTwo = true
+                }
+                if (hasVowelInFirstTwo === false && result.length === 1) {
+                    continue
+                }
                 result += newLetter
                 secondToLastLetter = previousLetter
                 previousLetter = newLetter

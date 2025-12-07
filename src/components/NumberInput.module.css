@@ -43,6 +43,7 @@
     height: 30px;
     border: none;
     border-radius: 0;
+    background-color: #bfff00;
 }
 
 input::-webkit-outer-spin-button,
