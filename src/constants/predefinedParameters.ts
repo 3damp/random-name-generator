@@ -307,7 +307,7 @@ export const DEFAULT_PARAMETERS: Parameters = {
             v: 10,
             w: 2,
             x: 2,
-            y: 10,
+            y: 2,
             z: 5,
         },
         j: {

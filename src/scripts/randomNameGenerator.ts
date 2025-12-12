@@ -35,10 +35,8 @@ export default class RandomNumberGenerator {
         let result = this.parameters.mustStartWith
         let previousLetter = result.charAt(result.length - 1)
         let secondToLastLetter = ""
-        let hasVowelInFirstTwo = false
         if (result.length === 0) {
             const newLetter = pickRandomLetter(this.startPool)
-            if (this.parameters.mustHaveInFirstTwoLetters.includes(newLetter)) hasVowelInFirstTwo = true
             result += newLetter
             previousLetter = result
         }
@@ -52,12 +50,10 @@ export default class RandomNumberGenerator {
             )
             if (Object.keys(possibleChars).length > 0) {
                 const newLetter = pickRandomLetter(possibleChars)
-                if (result.length <= 1 && this.parameters.mustHaveInFirstTwoLetters.includes(newLetter)) {
-                    hasVowelInFirstTwo = true
-                }
-                if (hasVowelInFirstTwo === false && result.length === 1) {
+
+                if (!this.hasMustHaveInFirstTwoLetters(result + newLetter))
                     continue
-                }
+
                 result += newLetter
                 secondToLastLetter = previousLetter
                 previousLetter = newLetter
@@ -69,6 +65,16 @@ export default class RandomNumberGenerator {
         }
 
         return this.capitalizeName(result + this.parameters.mustEndWith)
+    }
+
+    private hasMustHaveInFirstTwoLetters(name: string) {
+        if (name.length !== 2) return true
+        for (let i = 0; i < 2; i++) {
+            if (this.parameters.mustHaveInFirstTwoLetters.includes(name[i])) {
+                return true
+            }
+        }
+        return false
     }
 
     private calculateLetterPoolAfter(
