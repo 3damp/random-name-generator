@@ -9,6 +9,7 @@ export type Parameters = {
     mustStartWith: string
     mustEndWith: string
     mustHaveInFirstTwoLetters: GraphemeArray
+    mustHaveInLastTwoLetters: GraphemeArray
     cannotStartWith: GraphemeArray
     canEndWith: GraphemePool
     cannotEndWith: GraphemeArray
@@ -53,6 +54,11 @@ export default class RandomNumberGenerator {
 
                 if (!this.hasMustHaveInFirstTwoLetters(result + newLetter))
                     continue
+                if (
+                    result.length + newLetter.length >= nameLength &&
+                    !this.hasMustHaveInLastTwoLetters(result + newLetter)
+                )
+                    continue
 
                 result += newLetter
                 secondToLastLetter = previousLetter
@@ -71,6 +77,15 @@ export default class RandomNumberGenerator {
         if (name.length !== 2) return true
         for (let i = 0; i < 2; i++) {
             if (this.parameters.mustHaveInFirstTwoLetters.includes(name[i])) {
+                return true
+            }
+        }
+        return false
+    }
+    private hasMustHaveInLastTwoLetters(name: string) {
+        if (name.length < 2) return true
+        for (let i = 0; i < 2; i++) {
+            if (this.parameters.mustHaveInLastTwoLetters.includes(name[name.length - 1 - i])) {
                 return true
             }
         }
