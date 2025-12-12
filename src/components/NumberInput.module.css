@@ -25,6 +25,7 @@
     height: 30px;
     overflow: hidden;
     transition: height 0.3s;
+    border-radius: 4px;
 }
 .inner-container input {
     font-size: inherit;
