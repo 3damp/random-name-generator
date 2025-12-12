@@ -164,6 +164,8 @@ export default class RandomNumberGenerator {
                 acc[letter] = 1
                 return acc
             }, {})
+        } else {
+            this.parameters.mustStartWith = this.parameters.mustStartWith.toLowerCase()
         }
 
         // Build last letter pool
