@@ -8,6 +8,7 @@ export type Parameters = {
     maxLength: number
     mustStartWith: string
     mustEndWith: string
+    firstLetterPool: GraphemePool
     mustHaveInFirstTwoLetters: GraphemeArray
     mustHaveInLastTwoLetters: GraphemeArray
     cannotStartWith: GraphemeArray
@@ -18,7 +19,7 @@ export type Parameters = {
 
 export default class RandomNumberGenerator {
     private parameters: Parameters = DEFAULT_PARAMETERS
-    private startPool: GraphemePool = {}
+    // private startPool: GraphemePool = {}
     private lastLetterCanBe: GraphemePool = {}
     private secondToLastLetterCanBe: GraphemePool = {}
     private validParameters: boolean = true
@@ -37,7 +38,7 @@ export default class RandomNumberGenerator {
         let previousLetter = result.charAt(result.length - 1)
         let secondToLastLetter = ""
         if (result.length === 0) {
-            const newLetter = pickRandomLetter(this.startPool)
+            const newLetter = pickRandomLetter(this.parameters.firstLetterPool)
             result += newLetter
             previousLetter = result
         }
@@ -96,7 +97,7 @@ export default class RandomNumberGenerator {
         letter: string,
         remainingLength: number,
     ): GraphemePool {
-        if (!letter) letter = pickRandomLetter(this.startPool)
+        if (!letter) letter = pickRandomLetter(this.parameters.firstLetterPool)
         const isCanEndWithDefined = Object.keys(this.lastLetterCanBe).length > 0
 
         const pool = Object.entries(
@@ -152,21 +153,21 @@ export default class RandomNumberGenerator {
             this.parameters.minLength = this.parameters.maxLength
 
         // Build start pool
-        if (this.parameters.mustStartWith.length <= 0) {
-            let allLetters = Object.keys(this.parameters.lettersAfter)
-            for (const cannotStartWithLetter of this.parameters
-                .cannotStartWith) {
-                allLetters = allLetters.filter(
-                    (letter) => letter !== cannotStartWithLetter,
-                )
-            }
-            this.startPool = allLetters.reduce<GraphemePool>((acc, letter) => {
-                acc[letter] = 1
-                return acc
-            }, {})
-        } else {
-            this.parameters.mustStartWith = this.parameters.mustStartWith.toLowerCase()
-        }
+        // if (this.parameters.mustStartWith.length <= 0) {
+        //     let allLetters = Object.keys(this.parameters.lettersAfter)
+        //     for (const cannotStartWithLetter of this.parameters
+        //         .cannotStartWith) {
+        //         allLetters = allLetters.filter(
+        //             (letter) => letter !== cannotStartWithLetter,
+        //         )
+        //     }
+        //     this.startPool = allLetters.reduce<GraphemePool>((acc, letter) => {
+        //         acc[letter] = 1
+        //         return acc
+        //     }, {})
+        // } else {
+        //     this.parameters.mustStartWith = this.parameters.mustStartWith.toLowerCase()
+        // }
 
         // Build last letter pool
         if (this.parameters.mustEndWith.length <= 0) {
