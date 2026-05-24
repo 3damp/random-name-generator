@@ -60,7 +60,7 @@ const NameGeneratorV2: React.FC = () => {
                                 onChange={(e) => setStyleName(e.target.value)}
                                 style={{
                                     fontSize: "1em",
-                                    padding: "4px 8px",
+                                    padding: "8px",
                                     borderRadius: 4,
                                     border: "1px solid var(--accent-color-1)",
                                     background: "var(--background-color, #1e1e1e)",
