@@ -4,7 +4,7 @@ import NameGenerator from "./NameGenerator"
 import NameGeneratorV2 from "./NameGeneratorV2"
 
 function App() {
-    const [useV2, setUseV2] = useState(true)
+    const [useV2, setUseV2] = useState(false)
 
     const getButtonStyle = (isActive: boolean) => ({
         fontWeight: isActive ? "bold" : "normal",
