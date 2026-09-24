@@ -1,5 +1,5 @@
-import { useState } from "react"
 import "./App.css"
+import useLocalStorageState from "./hooks/useLocalStorageState"
 import NameGenerator from "./NameGenerator"
 import NameGeneratorV2 from "./NameGeneratorV2"
 import NameGeneratorV3 from "./NameGeneratorV3"
@@ -12,9 +12,18 @@ const GENERATOR_VERSIONS = {
 
 type GeneratorVersion = keyof typeof GENERATOR_VERSIONS
 
+const SELECTED_VERSION_STORAGE_KEY = "selectedGeneratorVersion"
+
+function isGeneratorVersion(value: string): value is GeneratorVersion {
+    return value in GENERATOR_VERSIONS
+}
+
 function App() {
-    const [selectedVersion, setSelectedVersion] =
-        useState<GeneratorVersion>("V1")
+    const [selectedVersion, setSelectedVersion] = useLocalStorageState(
+        SELECTED_VERSION_STORAGE_KEY,
+        "V1",
+        isGeneratorVersion,
+    )
 
     const getButtonStyle = (isActive: boolean) => ({
         fontWeight: isActive ? "bold" : "normal",
