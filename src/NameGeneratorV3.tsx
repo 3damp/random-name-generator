@@ -11,7 +11,7 @@ import folderIcon from "./images/folder.png"
 import { MARKOV_NAME_PRESET_GROUPS } from "./constants/markovNamePresets"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 
-const DEFAULT_CONTEXT_LENGTH = 2
+const DEFAULT_CONTEXT_LENGTH = 3
 const MAX_CONTEXT_LENGTH = 5
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
