@@ -135,7 +135,7 @@ const NameGeneratorV3: React.FC = () => {
                         />
                     </div>
                     <TextArea
-                        name={`Names (${trainingNames.length})`}
+                        name={`Sample names (${trainingNames.length})`}
                         value={namesText}
                         height={300}
                         onChange={setNamesText}
