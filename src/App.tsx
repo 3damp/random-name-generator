@@ -26,8 +26,8 @@ type GeneratorVersion = keyof typeof GENERATOR_VERSIONS
 
 const SELECTED_VERSION_STORAGE_KEY = "selectedGeneratorVersion"
 
-function isGeneratorVersion(value: string): value is GeneratorVersion {
-    return value in GENERATOR_VERSIONS
+function isGeneratorVersion(value: unknown): value is GeneratorVersion {
+    return typeof value === "string" && value in GENERATOR_VERSIONS
 }
 
 function App() {

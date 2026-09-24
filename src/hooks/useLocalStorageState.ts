@@ -1,16 +1,16 @@
 import { useCallback, useState } from "react"
 
-const useLocalStorageState = <T extends string>(
+const useLocalStorageState = <T>(
     storageKey: string,
     defaultValue: T,
-    isValidValue: (value: string) => value is T,
+    isValidValue: (value: unknown) => value is T,
 ) => {
     const [value, setValue] = useState<T>(() => {
         try {
-            const storedValue = localStorage.getItem(storageKey)
-            return storedValue !== null && isValidValue(storedValue)
-                ? storedValue
-                : defaultValue
+            const storedJson = localStorage.getItem(storageKey)
+            if (storedJson === null) return defaultValue
+            const storedValue: unknown = JSON.parse(storedJson)
+            return isValidValue(storedValue) ? storedValue : defaultValue
         } catch {
             return defaultValue
         }
@@ -20,7 +20,7 @@ const useLocalStorageState = <T extends string>(
         (newValue: T) => {
             setValue(newValue)
             try {
-                localStorage.setItem(storageKey, newValue)
+                localStorage.setItem(storageKey, JSON.stringify(newValue))
             } catch {
                 return
             }

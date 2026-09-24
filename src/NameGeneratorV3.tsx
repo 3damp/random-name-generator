@@ -10,17 +10,62 @@ import TextArea from "./components/TextArea"
 import PresetsPanel from "./components/PresetsPanel"
 import folderIcon from "./images/folder.png"
 import { MARKOV_NAME_PRESET_GROUPS } from "./constants/markovNamePresets"
+import useLocalStorageState from "./hooks/useLocalStorageState"
 
 const DEFAULT_CONTEXT_LENGTH = 2
 const MAX_CONTEXT_LENGTH = 5
+const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
+const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
+const USER_LENGTH_RANGE_STORAGE_KEY = "markovUserLengthRange"
+const DEFAULT_TRAINING_NAMES_TEXT =
+    MARKOV_NAME_PRESET_GROUPS[0].presets[0].value.join("\n")
+
+function isString(value: unknown): value is string {
+    return typeof value === "string"
+}
+
+function isValidContextLength(value: unknown): value is number {
+    return (
+        Number.isInteger(value) &&
+        (value as number) >= 1 &&
+        (value as number) <= MAX_CONTEXT_LENGTH
+    )
+}
+
+function isPositiveInteger(value: unknown): value is number {
+    return Number.isInteger(value) && (value as number) >= 1
+}
+
+function isUserLengthRangeOrNull(
+    value: unknown,
+): value is NameLengthRange | null {
+    if (value === null) return true
+    if (typeof value !== "object") return false
+    const { minLength, maxLength } = value as Partial<NameLengthRange>
+    return (
+        isPositiveInteger(minLength) &&
+        isPositiveInteger(maxLength) &&
+        minLength <= maxLength
+    )
+}
 
 const NameGeneratorV3: React.FC = () => {
-    const [namesText, setNamesText] = useState(() =>
-        MARKOV_NAME_PRESET_GROUPS[0].presets[0].value.join("\n"),
+    const [namesText, setNamesText] = useLocalStorageState(
+        TRAINING_NAMES_STORAGE_KEY,
+        DEFAULT_TRAINING_NAMES_TEXT,
+        isString,
     )
-    const [contextLength, setContextLength] = useState(DEFAULT_CONTEXT_LENGTH)
+    const [contextLength, setContextLength] = useLocalStorageState(
+        CONTEXT_LENGTH_STORAGE_KEY,
+        DEFAULT_CONTEXT_LENGTH,
+        isValidContextLength,
+    )
     const [userLengthRange, setUserLengthRange] =
-        useState<NameLengthRange | null>(null)
+        useLocalStorageState<NameLengthRange | null>(
+            USER_LENGTH_RANGE_STORAGE_KEY,
+            null,
+            isUserLengthRangeOrNull,
+        )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
     const [name, setName] = useState("???")
 
