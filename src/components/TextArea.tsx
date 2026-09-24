@@ -7,14 +7,16 @@ const TextArea = ({
     onChange,
     height = "auto",
     error = "",
+    isInitiallyOpen = false,
 }: {
     name: string
     value?: string
     onChange?: (value: string) => void
     height?: string | number
     error?: string
+    isInitiallyOpen?: boolean
 }) => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(isInitiallyOpen)
 
     return (
         <div className={styles["field"]}>

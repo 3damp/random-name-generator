@@ -9,9 +9,22 @@ import shareIcon from "./images/share.png"
 import folderIcon from "./images/folder.png"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import DefaultsPanel from "./components/DefaultsPanel"
+import PresetsPanel, { PresetGroup } from "./components/PresetsPanel"
+import {
+    DEFAULT_PARAMETERS,
+    JAPANESE_PARAMETERS,
+} from "./constants/predefinedParameters"
 
 const nameGenerator = new RandomNameGenerator()
+
+const PARAMETER_PRESET_GROUPS: PresetGroup<Parameters>[] = [
+    {
+        presets: [
+            { label: "Default", value: DEFAULT_PARAMETERS },
+            { label: "Japanese", value: JAPANESE_PARAMETERS },
+        ],
+    },
+]
 
 const NameGenerator: React.FC = () => {
     const { setParam, getParam, clearParams } = useUrlParameters()
@@ -37,7 +50,7 @@ const NameGenerator: React.FC = () => {
 
     const [advancedParametersError, setAdvancedParametersError] = useState("")
     const [name, setName] = useState("???")
-    const [isDefaultsPanelOpen, setIsDefaultsPanelOpen] = useState(false)
+    const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
 
     useEffect(() => {
         setAdvancedParameters(JSON.stringify(parameters, null, "\t"))
@@ -84,19 +97,24 @@ const NameGenerator: React.FC = () => {
         )
         toast.success("Link with settings copied!", { closeOnClick: true })
     }
-    function onDefaultsSelected(params: Parameters): void {
+    function onPresetSelected(params: Parameters): void {
         setParameters(params)
-        setIsDefaultsPanelOpen(false)
+        setIsPresetsPanelOpen(false)
     }
 
     return (
         <div className={styles["main-container"]}>
             <header className={styles["header"]}>
-                {isDefaultsPanelOpen && <DefaultsPanel onSelect={onDefaultsSelected}/>}
+                {isPresetsPanelOpen && (
+                    <PresetsPanel
+                        presetGroups={PARAMETER_PRESET_GROUPS}
+                        onSelect={onPresetSelected}
+                    />
+                )}
                 <img
                     src={folderIcon}
                     alt="open icon"
-                    onClick={() => setIsDefaultsPanelOpen(!isDefaultsPanelOpen)}
+                    onClick={() => setIsPresetsPanelOpen(!isPresetsPanelOpen)}
                     style={{
                         filter: "invert(1)",
                         width: "1em",

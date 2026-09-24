@@ -2,9 +2,19 @@ import { useState } from "react"
 import "./App.css"
 import NameGenerator from "./NameGenerator"
 import NameGeneratorV2 from "./NameGeneratorV2"
+import NameGeneratorV3 from "./NameGeneratorV3"
+
+const GENERATOR_VERSIONS = {
+    V1: NameGenerator,
+    V2: NameGeneratorV2,
+    V3: NameGeneratorV3,
+}
+
+type GeneratorVersion = keyof typeof GENERATOR_VERSIONS
 
 function App() {
-    const [useV2, setUseV2] = useState(false)
+    const [selectedVersion, setSelectedVersion] =
+        useState<GeneratorVersion>("V1")
 
     const getButtonStyle = (isActive: boolean) => ({
         fontWeight: isActive ? "bold" : "normal",
@@ -15,6 +25,8 @@ function App() {
         background: "var(--background-color, #131313)",
         color: "inherit",
     })
+
+    const SelectedNameGenerator = GENERATOR_VERSIONS[selectedVersion]
 
     return (
         <div
@@ -34,24 +46,21 @@ function App() {
                     flexShrink: 0,
                 }}
             >
-                <button
-                    className="version-toggle-button"
-                    onClick={() => setUseV2(false)}
-                    style={getButtonStyle(!useV2)}
-                >
-                    V1
-                </button>
-                <button
-                    className="version-toggle-button"
-                    onClick={() => setUseV2(true)}
-                    style={getButtonStyle(useV2)}
-                >
-                    V2
-                </button>
-                
+                {(Object.keys(GENERATOR_VERSIONS) as GeneratorVersion[]).map(
+                    (version) => (
+                        <button
+                            key={version}
+                            className="version-toggle-button"
+                            onClick={() => setSelectedVersion(version)}
+                            style={getButtonStyle(version === selectedVersion)}
+                        >
+                            {version}
+                        </button>
+                    ),
+                )}
             </div>
             <div style={{ flex: 1, minHeight: 0 }}>
-                {useV2 ? <NameGeneratorV2 /> : <NameGenerator />}
+                <SelectedNameGenerator />
             </div>
         </div>
     )
