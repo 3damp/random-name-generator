@@ -5,9 +5,21 @@ import NameGeneratorV2 from "./NameGeneratorV2"
 import NameGeneratorV3 from "./NameGeneratorV3"
 
 const GENERATOR_VERSIONS = {
-    V1: NameGenerator,
-    V2: NameGeneratorV2,
-    V3: NameGeneratorV3,
+    V1: {
+        component: NameGenerator,
+        description:
+            "Letter by letter from weighted rules.",
+    },
+    V2: {
+        component: NameGeneratorV2,
+        description:
+            "Creates syllables from weighted consonant and vowel pools.",
+    },
+    V3: {
+        component: NameGeneratorV3,
+        description:
+            "Learns patterns from sample names (Markov chain).",
+    },
 }
 
 type GeneratorVersion = keyof typeof GENERATOR_VERSIONS
@@ -35,7 +47,8 @@ function App() {
         color: "inherit",
     })
 
-    const SelectedNameGenerator = GENERATOR_VERSIONS[selectedVersion]
+    const SelectedNameGenerator =
+        GENERATOR_VERSIONS[selectedVersion].component
 
     return (
         <div
@@ -68,6 +81,21 @@ function App() {
                     ),
                 )}
             </div>
+            <p
+                style={{
+                    margin: 0,
+                    padding: "0 8px 8px",
+                    textAlign: "center",
+                    fontSize: "0.7em",
+                    opacity: 0.6,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    flexShrink: 0,
+                }}
+            >
+                {GENERATOR_VERSIONS[selectedVersion].description}
+            </p>
             <div style={{ flex: 1, minHeight: 0 }}>
                 <SelectedNameGenerator />
             </div>
