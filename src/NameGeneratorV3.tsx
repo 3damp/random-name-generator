@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react"
 import MarkovNameGenerator, {
     NameLengthRange,
-    getNameLengthRange,
     parseNameList,
 } from "./scripts/markovNameGenerator"
 import styles from "./NameGenerator.module.css"
@@ -16,7 +15,8 @@ const DEFAULT_CONTEXT_LENGTH = 2
 const MAX_CONTEXT_LENGTH = 5
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
-const USER_LENGTH_RANGE_STORAGE_KEY = "markovUserLengthRange"
+const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
+const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 4, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT =
     MARKOV_NAME_PRESET_GROUPS[0].presets[0].value.join("\n")
 
@@ -36,11 +36,8 @@ function isPositiveInteger(value: unknown): value is number {
     return Number.isInteger(value) && (value as number) >= 1
 }
 
-function isUserLengthRangeOrNull(
-    value: unknown,
-): value is NameLengthRange | null {
-    if (value === null) return true
-    if (typeof value !== "object") return false
+function isLengthRange(value: unknown): value is NameLengthRange {
+    if (typeof value !== "object" || value === null) return false
     const { minLength, maxLength } = value as Partial<NameLengthRange>
     return (
         isPositiveInteger(minLength) &&
@@ -60,25 +57,19 @@ const NameGeneratorV3: React.FC = () => {
         DEFAULT_CONTEXT_LENGTH,
         isValidContextLength,
     )
-    const [userLengthRange, setUserLengthRange] =
-        useLocalStorageState<NameLengthRange | null>(
-            USER_LENGTH_RANGE_STORAGE_KEY,
-            null,
-            isUserLengthRangeOrNull,
-        )
+    const [lengthRange, setLengthRange] = useLocalStorageState(
+        LENGTH_RANGE_STORAGE_KEY,
+        DEFAULT_LENGTH_RANGE,
+        isLengthRange,
+    )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
     const [name, setName] = useState("???")
 
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
-    const trainingNamesLengthRange = useMemo(
-        () => getNameLengthRange(trainingNames),
-        [trainingNames],
-    )
     const nameGenerator = useMemo(
         () => new MarkovNameGenerator(trainingNames, contextLength),
         [trainingNames, contextLength],
     )
-    const lengthRange = userLengthRange ?? trainingNamesLengthRange
 
     const onClickGenerate = () => {
         setName(
@@ -103,7 +94,7 @@ const NameGeneratorV3: React.FC = () => {
                 newRange.minLength,
                 newRange.maxLength,
             )
-        setUserLengthRange(newRange)
+        setLengthRange(newRange)
     }
 
     const updateContextLength = (value: number) => {
@@ -112,7 +103,6 @@ const NameGeneratorV3: React.FC = () => {
 
     const onPresetSelected = (names: string[]) => {
         setNamesText(names.join("\n"))
-        setUserLengthRange(null)
         setIsPresetsPanelOpen(false)
     }
 
@@ -156,23 +146,6 @@ const NameGeneratorV3: React.FC = () => {
                                 updateLengthRange({ maxLength: value })
                             }
                         />
-                        {userLengthRange && (
-                            <button
-                                onClick={() => setUserLengthRange(null)}
-                                style={{
-                                    alignSelf: "flex-end",
-                                    border: "none",
-                                    background: "none",
-                                    color: "var(--accent-color-1)",
-                                    cursor: "pointer",
-                                    fontSize: "0.9em",
-                                }}
-                            >
-                                Use lengths from names (
-                                {trainingNamesLengthRange.minLength}-
-                                {trainingNamesLengthRange.maxLength})
-                            </button>
-                        )}
                         <NumberInput
                             name="Context Letters"
                             value={contextLength}

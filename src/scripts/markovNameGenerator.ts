@@ -16,15 +16,6 @@ export function parseNameList(text: string): string[] {
         .filter((name) => name.length > 0)
 }
 
-export function getNameLengthRange(names: string[]): NameLengthRange {
-    if (names.length === 0) return { minLength: 1, maxLength: 1 }
-    const lengths = names.map((name) => name.length)
-    return {
-        minLength: Math.min(...lengths),
-        maxLength: Math.max(...lengths),
-    }
-}
-
 export default class MarkovNameGenerator {
     private readonly trainingNames: Set<string>
     private readonly transitionTablesByContextLength: TransitionTable[] = []
