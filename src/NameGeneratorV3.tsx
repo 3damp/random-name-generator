@@ -16,9 +16,15 @@ const MAX_CONTEXT_LENGTH = 5
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
 const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
+const GENERATE_MULTIPLE_NAMES_STORAGE_KEY = "markovGenerateMultipleNames"
+const MULTIPLE_NAMES_COUNT = 6
 const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 4, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT =
-    MARKOV_NAME_PRESET_GROUPS[0].presets[0].value.join("\n")
+    MARKOV_NAME_PRESET_GROUPS[5].presets[2].value.join("\n")
+
+function isBoolean(value: unknown): value is boolean {
+    return typeof value === "boolean"
+}
 
 function isString(value: unknown): value is string {
     return typeof value === "string"
@@ -62,8 +68,14 @@ const NameGeneratorV3: React.FC = () => {
         DEFAULT_LENGTH_RANGE,
         isLengthRange,
     )
+    const [isGeneratingMultipleNames, setIsGeneratingMultipleNames] =
+        useLocalStorageState(
+            GENERATE_MULTIPLE_NAMES_STORAGE_KEY,
+            false,
+            isBoolean,
+        )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
-    const [name, setName] = useState("???")
+    const [generatedNames, setGeneratedNames] = useState(["???"])
 
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
     const nameGenerator = useMemo(
@@ -72,10 +84,13 @@ const NameGeneratorV3: React.FC = () => {
     )
 
     const onClickGenerate = () => {
-        setName(
-            nameGenerator.generateName(
-                lengthRange.minLength,
-                lengthRange.maxLength,
+        const nameCount = isGeneratingMultipleNames ? MULTIPLE_NAMES_COUNT : 1
+        setGeneratedNames(
+            Array.from({ length: nameCount }, () =>
+                nameGenerator.generateName(
+                    lengthRange.minLength,
+                    lengthRange.maxLength,
+                ),
             ),
         )
     }
@@ -127,7 +142,25 @@ const NameGeneratorV3: React.FC = () => {
                         top: 20,
                     }}
                 />
-                <h1>{name}</h1>
+                {generatedNames.length === 1 ? (
+                    <h1>{generatedNames[0]}</h1>
+                ) : (
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, auto)",
+                            columnGap: "2em",
+                            rowGap: "0.2em",
+                            textAlign: "center",
+                            fontSize: "1.2em",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        {generatedNames.map((generatedName, index) => (
+                            <span key={index}>{generatedName}</span>
+                        ))}
+                    </div>
+                )}
             </header>
             <div className={styles["scrollable-container"]}>
                 <div className={styles["scrollable-content"]}>
@@ -157,8 +190,28 @@ const NameGeneratorV3: React.FC = () => {
                         value={namesText}
                         height={300}
                         onChange={setNamesText}
-                        isInitiallyOpen
                     />
+                    <label
+                        style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            padding: "10px 0",
+                            fontSize: "1.44em",
+                        }}
+                    >
+                        Generate multiple names
+                        <input
+                            type="checkbox"
+                            checked={isGeneratingMultipleNames}
+                            onChange={(event) =>
+                                setIsGeneratingMultipleNames(
+                                    event.target.checked,
+                                )
+                            }
+                            style={{ width: 20, height: 20 }}
+                        />
+                    </label>
                 </div>
             </div>
             <footer className={styles["footer"]}>
