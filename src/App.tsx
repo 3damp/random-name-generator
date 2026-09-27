@@ -33,7 +33,7 @@ function isGeneratorVersion(value: unknown): value is GeneratorVersion {
 function App() {
     const [selectedVersion, setSelectedVersion] = useLocalStorageState(
         SELECTED_VERSION_STORAGE_KEY,
-        "V1",
+        "V3",
         isGeneratorVersion,
     )
 
