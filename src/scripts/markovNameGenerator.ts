@@ -3,6 +3,7 @@ const MAX_GENERATION_ATTEMPTS = 200
 
 type NextLetterCounts = Record<string, number>
 type TransitionTable = Map<string, NextLetterCounts>
+type EndableLetterCountsByContext = Map<string, boolean[]>
 
 export type NameLengthRange = {
     minLength: number
@@ -18,78 +19,145 @@ export function parseNameList(text: string): string[] {
 
 export default class MarkovNameGenerator {
     private readonly trainingNames: Set<string>
-    private readonly transitionTablesByContextLength: TransitionTable[] = []
+    private readonly transitionTable: TransitionTable
+    private readonly startContext: string
+    private readonly endableLetterCountsByMaxLength = new Map<
+        number,
+        EndableLetterCountsByContext
+    >()
 
     constructor(
         names: string[],
         private readonly contextLength: number,
     ) {
         this.trainingNames = new Set(names)
-        for (let length = 1; length <= contextLength; length++) {
-            this.transitionTablesByContextLength[length] = buildTransitionTable(
-                names,
-                length,
-            )
-        }
+        this.transitionTable = buildTransitionTable(names, contextLength)
+        this.startContext = NAME_BOUNDARY.repeat(contextLength)
     }
 
     generateName(minLength: number, maxLength: number): string {
         if (this.trainingNames.size === 0) return "Add some names"
 
+        const endableLetterCountsByContext =
+            this.getEndableLetterCountsByContext(maxLength)
+        const canStartName = canEndWithinLetterCountRange(
+            endableLetterCountsByContext.get(this.startContext),
+            minLength,
+            maxLength,
+        )
+        if (!canStartName) return "No name fits"
+
         let nameMatchingTrainingName = ""
         for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
-            const name = this.tryGenerateName(minLength, maxLength)
-            if (!name) continue
+            const name = this.generateNameWithinLengthRange(
+                minLength,
+                maxLength,
+                endableLetterCountsByContext,
+            )
             if (!this.trainingNames.has(name)) return capitalizeName(name)
             nameMatchingTrainingName = name
         }
-
-        if (nameMatchingTrainingName)
-            return capitalizeName(nameMatchingTrainingName)
-        return "No name fits"
+        return capitalizeName(nameMatchingTrainingName)
     }
 
-    private tryGenerateName(minLength: number, maxLength: number): string {
-        let paddedName = NAME_BOUNDARY.repeat(this.contextLength)
-        const startPaddingLength = paddedName.length
+    private generateNameWithinLengthRange(
+        minLength: number,
+        maxLength: number,
+        endableLetterCountsByContext: EndableLetterCountsByContext,
+    ): string {
+        let context = this.startContext
+        let name = ""
 
         while (true) {
-            const nameLength = paddedName.length - startPaddingLength
-            const nextLetterCounts = this.findNextLetterCounts(
-                paddedName,
-                (letter) =>
-                    letter === NAME_BOUNDARY
-                        ? nameLength >= minLength
-                        : nameLength < maxLength,
-            )
-            if (!nextLetterCounts) return ""
-
-            const nextLetter = pickWeightedRandom(nextLetterCounts)
-            if (nextLetter === NAME_BOUNDARY)
-                return paddedName.slice(startPaddingLength)
-            paddedName += nextLetter
-        }
-    }
-
-    private findNextLetterCounts(
-        paddedName: string,
-        isLetterAllowed: (letter: string) => boolean,
-    ): NextLetterCounts | undefined {
-        for (let length = this.contextLength; length >= 1; length--) {
-            const context = paddedName.slice(-length)
-            const counts =
-                this.transitionTablesByContextLength[length].get(context)
-            if (!counts) continue
-
-            const allowedCounts = Object.fromEntries(
-                Object.entries(counts).filter(([letter]) =>
-                    isLetterAllowed(letter),
+            const nameLength = name.length
+            const allowedNextLetterCounts = Object.fromEntries(
+                Object.entries(this.transitionTable.get(context) ?? {}).filter(
+                    ([letter]) =>
+                        letter === NAME_BOUNDARY
+                            ? nameLength >= minLength
+                            : canEndWithinLetterCountRange(
+                                  endableLetterCountsByContext.get(
+                                      this.appendToContext(context, letter),
+                                  ),
+                                  minLength - nameLength - 1,
+                                  maxLength - nameLength - 1,
+                              ),
                 ),
             )
-            if (Object.keys(allowedCounts).length > 0) return allowedCounts
+
+            const nextLetter = pickWeightedRandom(allowedNextLetterCounts)
+            if (nextLetter === NAME_BOUNDARY) return name
+            name += nextLetter
+            context = this.appendToContext(context, nextLetter)
         }
-        return undefined
     }
+
+    private getEndableLetterCountsByContext(
+        maxLength: number,
+    ): EndableLetterCountsByContext {
+        let endableLetterCountsByContext =
+            this.endableLetterCountsByMaxLength.get(maxLength)
+        if (!endableLetterCountsByContext) {
+            endableLetterCountsByContext = this.buildEndableLetterCountsByContext(
+                maxLength,
+            )
+            this.endableLetterCountsByMaxLength.set(
+                maxLength,
+                endableLetterCountsByContext,
+            )
+        }
+        return endableLetterCountsByContext
+    }
+
+    private buildEndableLetterCountsByContext(
+        maxLength: number,
+    ): EndableLetterCountsByContext {
+        const endableLetterCountsByContext: EndableLetterCountsByContext =
+            new Map()
+        for (const [context, nextLetterCounts] of this.transitionTable) {
+            const canEndAfterLetterCount = new Array<boolean>(
+                maxLength + 1,
+            ).fill(false)
+            canEndAfterLetterCount[0] = NAME_BOUNDARY in nextLetterCounts
+            endableLetterCountsByContext.set(context, canEndAfterLetterCount)
+        }
+
+        for (let letterCount = 1; letterCount <= maxLength; letterCount++) {
+            for (const [context, nextLetterCounts] of this.transitionTable) {
+                const canEndAfterLetterCount =
+                    endableLetterCountsByContext.get(context)!
+                canEndAfterLetterCount[letterCount] = Object.keys(
+                    nextLetterCounts,
+                ).some(
+                    (letter) =>
+                        letter !== NAME_BOUNDARY &&
+                        endableLetterCountsByContext.get(
+                            this.appendToContext(context, letter),
+                        )?.[letterCount - 1] === true,
+                )
+            }
+        }
+        return endableLetterCountsByContext
+    }
+
+    private appendToContext(context: string, letter: string): string {
+        return (context + letter).slice(-this.contextLength)
+    }
+}
+
+function canEndWithinLetterCountRange(
+    canEndAfterLetterCount: boolean[] | undefined,
+    minLetterCount: number,
+    maxLetterCount: number,
+): boolean {
+    return (
+        canEndAfterLetterCount?.some(
+            (canEnd, letterCount) =>
+                canEnd &&
+                letterCount >= minLetterCount &&
+                letterCount <= maxLetterCount,
+        ) ?? false
+    )
 }
 
 function buildTransitionTable(
