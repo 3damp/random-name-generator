@@ -18,7 +18,7 @@ const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
 const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
 const GENERATE_MULTIPLE_NAMES_STORAGE_KEY = "markovGenerateMultipleNames"
 const MULTIPLE_NAMES_COUNT = 6
-const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 4, maxLength: 9 }
+const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 7 }
 const DEFAULT_TRAINING_NAMES_TEXT =
     MARKOV_NAME_PRESET_GROUPS[5].presets[2].value.join("\n")
 
