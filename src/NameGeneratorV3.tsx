@@ -12,7 +12,7 @@ import { MARKOV_NAME_PRESET_GROUPS } from "./constants/markovNamePresets"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 
 const DEFAULT_CONTEXT_LENGTH = 2
-const MAX_CONTEXT_LENGTH = 5
+const MAX_CONTEXT_LENGTH = 4
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
 const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
@@ -112,10 +112,6 @@ const NameGeneratorV3: React.FC = () => {
         setLengthRange(newRange)
     }
 
-    const updateContextLength = (value: number) => {
-        setContextLength(Math.min(MAX_CONTEXT_LENGTH, Math.max(1, value || 1)))
-    }
-
     const onPresetSelected = (names: string[]) => {
         setNamesText(names.join("\n"))
         setIsPresetsPanelOpen(false)
@@ -179,11 +175,44 @@ const NameGeneratorV3: React.FC = () => {
                                 updateLengthRange({ maxLength: value })
                             }
                         />
-                        <NumberInput
-                            name="Context Letters"
-                            value={contextLength}
-                            onChange={updateContextLength}
-                        />
+                        <label
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 4,
+                                padding: "10px 0",
+                                fontSize: "1.44em",
+                            }}
+                        >
+                            Similarity to samples
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    fontSize: "0.7em",
+                                }}
+                            >
+                                Random
+                                <input
+                                    type="range"
+                                    min={1}
+                                    max={MAX_CONTEXT_LENGTH}
+                                    step={1}
+                                    value={contextLength}
+                                    onChange={(event) =>
+                                        setContextLength(
+                                            Number(event.target.value),
+                                        )
+                                    }
+                                    style={{
+                                        flexGrow: 1,
+                                        accentColor: "var(--accent-color-1)",
+                                    }}
+                                />
+                                Strict
+                            </div>
+                        </label>
                     </div>
                     <TextArea
                         name={`Sample names (${trainingNames.length})`}
