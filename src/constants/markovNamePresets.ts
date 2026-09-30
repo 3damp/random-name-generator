@@ -393,6 +393,38 @@ const MORDOR_NAMES: NamesByGender = {
     neutral: [...MORDOR_MALE_NAMES, ...MORDOR_FEMALE_NAMES],
 }
 
+const SPANISH_WORDS = [
+    "abeja", "abrazo", "abuelo", "agua", "águila", "alegría", "alma",
+    "almendra", "amanecer", "amigo", "amor", "árbol", "arena", "arroyo",
+    "azúcar", "bahía", "ballena", "bandera", "barco", "belleza", "bosque",
+    "brisa", "burbuja", "caballo", "cabeza", "cadena", "calle", "camino",
+    "campana", "canción", "caracol", "cariño", "castillo", "cebolla",
+    "cereza", "cielo", "ciudad", "colina", "corazón", "cordero", "cuchara",
+    "cuento", "cueva", "dedo", "delfín", "desierto", "destino", "diamante",
+    "dulce", "espejo", "espada", "espíritu", "estrella", "fantasma",
+    "fiesta", "flecha", "flor", "fortaleza", "fuego", "fuente", "galleta",
+    "gato", "gigante", "girasol", "golondrina", "guitarra", "hermano",
+    "hielo", "hierba", "hoguera", "hormiga", "horizonte", "huella", "huerto",
+    "iglesia", "invierno", "isla", "jardín", "jazmín", "joya", "juego",
+    "lágrima", "lagarto", "laguna", "leche", "lechuza", "leña", "león",
+    "libro", "limón", "llama", "llave", "lluvia", "lobo", "locura", "luna",
+    "madera", "madrugada", "mañana", "manzana", "mariposa", "martillo",
+    "melodía", "mercado", "miel", "milagro", "mirada", "molino", "montaña",
+    "muñeca", "naranja", "naturaleza", "navaja", "niebla", "nieve", "noche",
+    "nube", "olivo", "ola", "oreja", "oro", "otoño", "paloma", "pájaro",
+    "palabra", "pan", "pantano", "paraguas", "pasillo", "pellejo", "pepino",
+    "perro", "piedra", "pimienta", "pino", "playa", "pluma", "poema",
+    "primavera", "pueblo", "puente", "puerta", "queso", "quimera", "rana",
+    "rayo", "recuerdo", "refugio", "reina", "relámpago", "reloj", "río",
+    "roble", "rocío", "rosa", "rueda", "sábana", "sabor", "salvaje",
+    "sandía", "sangre", "selva", "semilla", "sendero", "serpiente",
+    "silencio", "sirena", "sol", "sombra", "sonrisa", "sueño", "tambor",
+    "tarde", "tejado", "tesoro", "tiburón", "tiempo", "tierra", "tigre",
+    "tormenta", "tortuga", "trueno", "tulipán", "urraca", "uva", "valle",
+    "vaso", "vela", "ventana", "verano", "viento", "volcán", "yegua",
+    "zapato", "zorro", "zumo", "cántaro", "hechizo", "lucero", "marea",
+]
+
 export const MARKOV_NAME_PRESET_GROUPS: PresetGroup<string[]>[] = [
     buildStylePresetGroup("Japanese", JAPANESE_NAMES),
     buildStylePresetGroup("English", ENGLISH_NAMES),
@@ -402,4 +434,8 @@ export const MARKOV_NAME_PRESET_GROUPS: PresetGroup<string[]>[] = [
     buildStylePresetGroup("Fantasy", FANTASY_NAMES),
     buildStylePresetGroup("Elvish", ELVISH_NAMES),
     buildStylePresetGroup("Mordor", MORDOR_NAMES),
+    {
+        label: "Spanish",
+        presets: [{ label: "Words", value: SPANISH_WORDS }],
+    },
 ]
