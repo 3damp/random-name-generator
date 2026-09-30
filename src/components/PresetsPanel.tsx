@@ -39,10 +39,11 @@ export default function PresetsPanel<PresetValue>({
                     left: 0,
                     opacity: 0.95,
                 }}
-            ></div>
+                ></div>
             <div
                 style={{
                     width: "95%",
+                    maxWidth: "600px",
                     backgroundColor: "#444",
                     borderRadius: 10,
                     position: "absolute",
@@ -51,7 +52,8 @@ export default function PresetsPanel<PresetValue>({
                     transform: "translate(-50%, -50%)",
                     opacity: 1,
                     maxHeight: "90%",
-                    overflowY: "auto",
+                    display: "flex",
+                    flexDirection: "column",
                 }}
             >
                 <div
@@ -70,6 +72,8 @@ export default function PresetsPanel<PresetValue>({
                         flexDirection: "column",
                         gap: 10,
                         padding: "0 10px 10px",
+                        overflowY: "auto",
+                        minHeight: 0,
                     }}
                 >
                     {presetGroups.map((group, groupIndex) => (
