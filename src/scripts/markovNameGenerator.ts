@@ -3,7 +3,11 @@ const MAX_GENERATION_ATTEMPTS = 200
 
 type NextLetterCounts = Record<string, number>
 type TransitionTable = Map<string, NextLetterCounts>
-type EndableLetterCountsByContext = Map<string, boolean[]>
+type EndableLetterCountsByMatchedEndingLength = boolean[][]
+type EndableLetterCountsByContext = Map<
+    string,
+    EndableLetterCountsByMatchedEndingLength
+>
 
 export type NameLengthRange = {
     minLength: number
@@ -20,9 +24,9 @@ export function parseNameList(text: string): string[] {
 export default class MarkovNameGenerator {
     private readonly trainingNames: Set<string>
     private readonly transitionTable: TransitionTable
-    private readonly startContext: string
-    private readonly endableLetterCountsByMaxLength = new Map<
-        number,
+    private readonly nameBoundaryContext: string
+    private readonly endableLetterCountsByMaxLengthAndEnding = new Map<
+        string,
         EndableLetterCountsByContext
     >()
 
@@ -32,24 +36,50 @@ export default class MarkovNameGenerator {
     ) {
         this.trainingNames = new Set(names)
         this.transitionTable = buildTransitionTable(names, contextLength)
-        this.startContext = NAME_BOUNDARY.repeat(contextLength)
+        this.nameBoundaryContext = NAME_BOUNDARY.repeat(contextLength)
     }
 
-    generateName(minLength: number, maxLength: number): string {
+    generateName(
+        minLength: number,
+        maxLength: number,
+        requiredStart = "",
+        requiredEnd = "",
+    ): string {
         if (this.trainingNames.size === 0) return "Add some names"
 
-        const endableLetterCountsByContext =
-            this.getEndableLetterCountsByContext(maxLength)
-        const canStartName = canEndWithinLetterCountRange(
-            endableLetterCountsByContext.get(this.startContext),
-            minLength,
-            maxLength,
+        const nameStart = requiredStart.trim().toLowerCase()
+        const nameEnd = requiredEnd.trim().toLowerCase()
+        const nameStartContext = this.appendToContext(
+            this.nameBoundaryContext,
+            nameStart,
         )
-        if (!canStartName) return "No name fits"
+        const nameStartMatchedEndingLength = Array.from(nameStart).reduce(
+            (matchedEndingLength, letter) =>
+                getMatchedEndingLengthAfterLetter(
+                    nameEnd,
+                    matchedEndingLength,
+                    letter,
+                ),
+            0,
+        )
+        const endableLetterCountsByContext =
+            this.getEndableLetterCountsByContext(maxLength, nameEnd)
+        const canCompleteName = canEndWithinLetterCountRange(
+            endableLetterCountsByContext.get(nameStartContext)?.[
+                nameStartMatchedEndingLength
+            ],
+            minLength - nameStart.length,
+            maxLength - nameStart.length,
+        )
+        if (!canCompleteName) return "No name fits"
 
         let nameMatchingTrainingName = ""
         for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
             const name = this.generateNameWithinLengthRange(
+                nameStart,
+                nameStartContext,
+                nameStartMatchedEndingLength,
+                nameEnd,
                 minLength,
                 maxLength,
                 endableLetterCountsByContext,
@@ -61,12 +91,17 @@ export default class MarkovNameGenerator {
     }
 
     private generateNameWithinLengthRange(
+        nameStart: string,
+        nameStartContext: string,
+        nameStartMatchedEndingLength: number,
+        nameEnd: string,
         minLength: number,
         maxLength: number,
         endableLetterCountsByContext: EndableLetterCountsByContext,
     ): string {
-        let context = this.startContext
-        let name = ""
+        let context = nameStartContext
+        let matchedEndingLength = nameStartMatchedEndingLength
+        let name = nameStart
 
         while (true) {
             const nameLength = name.length
@@ -74,11 +109,18 @@ export default class MarkovNameGenerator {
                 Object.entries(this.transitionTable.get(context) ?? {}).filter(
                     ([letter]) =>
                         letter === NAME_BOUNDARY
-                            ? nameLength >= minLength
+                            ? nameLength >= minLength &&
+                              matchedEndingLength === nameEnd.length
                             : canEndWithinLetterCountRange(
                                   endableLetterCountsByContext.get(
                                       this.appendToContext(context, letter),
-                                  ),
+                                  )?.[
+                                      getMatchedEndingLengthAfterLetter(
+                                          nameEnd,
+                                          matchedEndingLength,
+                                          letter,
+                                      )
+                                  ],
                                   minLength - nameLength - 1,
                                   maxLength - nameLength - 1,
                               ),
@@ -89,20 +131,28 @@ export default class MarkovNameGenerator {
             if (nextLetter === NAME_BOUNDARY) return name
             name += nextLetter
             context = this.appendToContext(context, nextLetter)
+            matchedEndingLength = getMatchedEndingLengthAfterLetter(
+                nameEnd,
+                matchedEndingLength,
+                nextLetter,
+            )
         }
     }
 
     private getEndableLetterCountsByContext(
         maxLength: number,
+        nameEnd: string,
     ): EndableLetterCountsByContext {
+        const cacheKey = maxLength + NAME_BOUNDARY + nameEnd
         let endableLetterCountsByContext =
-            this.endableLetterCountsByMaxLength.get(maxLength)
+            this.endableLetterCountsByMaxLengthAndEnding.get(cacheKey)
         if (!endableLetterCountsByContext) {
             endableLetterCountsByContext = this.buildEndableLetterCountsByContext(
                 maxLength,
+                nameEnd,
             )
-            this.endableLetterCountsByMaxLength.set(
-                maxLength,
+            this.endableLetterCountsByMaxLengthAndEnding.set(
+                cacheKey,
                 endableLetterCountsByContext,
             )
         }
@@ -111,29 +161,51 @@ export default class MarkovNameGenerator {
 
     private buildEndableLetterCountsByContext(
         maxLength: number,
+        nameEnd: string,
     ): EndableLetterCountsByContext {
         const endableLetterCountsByContext: EndableLetterCountsByContext =
             new Map()
         for (const [context, nextLetterCounts] of this.transitionTable) {
-            const canEndAfterLetterCount = new Array<boolean>(
-                maxLength + 1,
-            ).fill(false)
-            canEndAfterLetterCount[0] = NAME_BOUNDARY in nextLetterCounts
-            endableLetterCountsByContext.set(context, canEndAfterLetterCount)
+            const endableLetterCountsByMatchedEndingLength = Array.from(
+                { length: nameEnd.length + 1 },
+                (_, matchedEndingLength) => {
+                    const canEndAfterLetterCount = new Array<boolean>(
+                        maxLength + 1,
+                    ).fill(false)
+                    canEndAfterLetterCount[0] =
+                        NAME_BOUNDARY in nextLetterCounts &&
+                        matchedEndingLength === nameEnd.length
+                    return canEndAfterLetterCount
+                },
+            )
+            endableLetterCountsByContext.set(
+                context,
+                endableLetterCountsByMatchedEndingLength,
+            )
         }
 
         for (let letterCount = 1; letterCount <= maxLength; letterCount++) {
             for (const [context, nextLetterCounts] of this.transitionTable) {
-                const canEndAfterLetterCount =
+                const endableLetterCountsByMatchedEndingLength =
                     endableLetterCountsByContext.get(context)!
-                canEndAfterLetterCount[letterCount] = Object.keys(
-                    nextLetterCounts,
-                ).some(
-                    (letter) =>
-                        letter !== NAME_BOUNDARY &&
-                        endableLetterCountsByContext.get(
-                            this.appendToContext(context, letter),
-                        )?.[letterCount - 1] === true,
+                endableLetterCountsByMatchedEndingLength.forEach(
+                    (canEndAfterLetterCount, matchedEndingLength) => {
+                        canEndAfterLetterCount[letterCount] = Object.keys(
+                            nextLetterCounts,
+                        ).some(
+                            (letter) =>
+                                letter !== NAME_BOUNDARY &&
+                                endableLetterCountsByContext.get(
+                                    this.appendToContext(context, letter),
+                                )?.[
+                                    getMatchedEndingLengthAfterLetter(
+                                        nameEnd,
+                                        matchedEndingLength,
+                                        letter,
+                                    )
+                                ]?.[letterCount - 1] === true,
+                        )
+                    },
                 )
             }
         }
@@ -143,6 +215,23 @@ export default class MarkovNameGenerator {
     private appendToContext(context: string, letter: string): string {
         return (context + letter).slice(-this.contextLength)
     }
+}
+
+function getMatchedEndingLengthAfterLetter(
+    nameEnd: string,
+    matchedEndingLength: number,
+    letter: string,
+): number {
+    const matchedText = nameEnd.slice(0, matchedEndingLength) + letter
+    for (
+        let candidateLength = Math.min(matchedText.length, nameEnd.length);
+        candidateLength > 0;
+        candidateLength--
+    ) {
+        if (matchedText.endsWith(nameEnd.slice(0, candidateLength)))
+            return candidateLength
+    }
+    return 0
 }
 
 function canEndWithinLetterCountRange(

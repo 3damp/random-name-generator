@@ -11,9 +11,11 @@ export type PresetGroup<PresetValue> = {
 export default function PresetsPanel<PresetValue>({
     presetGroups,
     onSelect,
+    onClose,
 }: {
     presetGroups: PresetGroup<PresetValue>[]
     onSelect: (value: PresetValue) => void
+    onClose: () => void
 }): JSX.Element {
     const buttonStyles: React.CSSProperties = {
         flex: 1,
@@ -31,33 +33,27 @@ export default function PresetsPanel<PresetValue>({
         <>
             <div
                 style={{
-                    width: "100%",
-                    height: "100%",
                     backgroundColor: "#000",
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
+                    position: "fixed",
+                    inset: 0,
                     opacity: 0.95,
+                    zIndex: 10,
                 }}
-                ></div>
+            ></div>
             <div
                 style={{
-                    width: "95%",
-                    maxWidth: "600px",
                     backgroundColor: "#444",
                     borderRadius: 10,
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                    opacity: 1,
-                    maxHeight: "90%",
+                    position: "fixed",
+                    inset: 16,
+                    zIndex: 11,
                     display: "flex",
                     flexDirection: "column",
                 }}
             >
                 <div
                     style={{
+                        position: "relative",
                         padding: 10,
                         fontWeight: "bold",
                         textAlign: "center",
@@ -65,6 +61,37 @@ export default function PresetsPanel<PresetValue>({
                     }}
                 >
                     Presets
+                    <button
+                        aria-label="Close presets"
+                        onClick={onClose}
+                        style={{
+                            position: "absolute",
+                            top: 10,
+                            left: 10,
+                            width: 32,
+                            height: 32,
+                            padding: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            backgroundColor: "transparent",
+                            color: "white",
+                            border: "none",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <svg
+                            width="24"
+                            height="24"
+                            viewBox="0 0 16 16"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                        >
+                            <line x1="2" y1="2" x2="14" y2="14" />
+                            <line x1="14" y1="2" x2="2" y2="14" />
+                        </svg>
+                    </button>
                 </div>
                 <div
                     style={{

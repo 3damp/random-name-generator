@@ -6,8 +6,8 @@ import MarkovNameGenerator, {
 import styles from "./NameGenerator.module.css"
 import NumberInput from "./components/NumberInput"
 import TextArea from "./components/TextArea"
+import TextInput from "./components/TextInput"
 import PresetsPanel from "./components/PresetsPanel"
-import folderIcon from "./images/folder.png"
 import { MARKOV_NAME_PRESET_GROUPS } from "./constants/markovNamePresets"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 
@@ -17,8 +17,10 @@ const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
 const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
 const GENERATE_MULTIPLE_NAMES_STORAGE_KEY = "markovGenerateMultipleNames"
-const MULTIPLE_NAMES_COUNT = 6
-const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 7 }
+const REQUIRED_NAME_START_STORAGE_KEY = "markovRequiredNameStart"
+const REQUIRED_NAME_END_STORAGE_KEY = "markovRequiredNameEnd"
+const MULTIPLE_NAMES_COUNT = 4
+const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT =
     MARKOV_NAME_PRESET_GROUPS[5].presets[2].value.join("\n")
 
@@ -74,6 +76,16 @@ const NameGeneratorV3: React.FC = () => {
             false,
             isBoolean,
         )
+    const [requiredNameStart, setRequiredNameStart] = useLocalStorageState(
+        REQUIRED_NAME_START_STORAGE_KEY,
+        "",
+        isString,
+    )
+    const [requiredNameEnd, setRequiredNameEnd] = useLocalStorageState(
+        REQUIRED_NAME_END_STORAGE_KEY,
+        "",
+        isString,
+    )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
     const [generatedNames, setGeneratedNames] = useState(["???"])
 
@@ -90,6 +102,8 @@ const NameGeneratorV3: React.FC = () => {
                 nameGenerator.generateName(
                     lengthRange.minLength,
                     lengthRange.maxLength,
+                    requiredNameStart,
+                    requiredNameEnd,
                 ),
             ),
         )
@@ -124,28 +138,32 @@ const NameGeneratorV3: React.FC = () => {
                     <PresetsPanel
                         presetGroups={MARKOV_NAME_PRESET_GROUPS}
                         onSelect={onPresetSelected}
+                        onClose={() => setIsPresetsPanelOpen(false)}
                     />
                 )}
-                <img
-                    src={folderIcon}
-                    alt="open icon"
+                <button
                     onClick={() => setIsPresetsPanelOpen(!isPresetsPanelOpen)}
                     style={{
-                        filter: "invert(1)",
-                        width: "1em",
                         position: "absolute",
                         left: 20,
                         top: 20,
+                        padding: "6px 12px",
+                        fontSize: "0.6em",
+                        color: "var(--accent-color-1)",
+                        backgroundColor: "transparent",
+                        border: "1px solid var(--accent-color-2)",
+                        borderRadius: 4,
+                        cursor: "pointer",
                     }}
-                />
+                >
+                    Presets
+                </button>
                 {generatedNames.length === 1 ? (
                     <h1>{generatedNames[0]}</h1>
                 ) : (
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(2, auto)",
-                            columnGap: "2em",
                             rowGap: "0.2em",
                             textAlign: "center",
                             fontSize: "1.2em",
@@ -213,6 +231,18 @@ const NameGeneratorV3: React.FC = () => {
                                 Strict
                             </div>
                         </label>
+                    </div>
+                    <div style={{ display: "flex", gap: 20 }}>
+                        <TextInput
+                            name="Start with"
+                            value={requiredNameStart}
+                            onChange={setRequiredNameStart}
+                        />
+                        <TextInput
+                            name="End with"
+                            value={requiredNameEnd}
+                            onChange={setRequiredNameEnd}
+                        />
                     </div>
                     <TextArea
                         name={`Sample names (${trainingNames.length})`}

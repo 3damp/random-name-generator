@@ -109,6 +109,7 @@ const NameGenerator: React.FC = () => {
                     <PresetsPanel
                         presetGroups={PARAMETER_PRESET_GROUPS}
                         onSelect={onPresetSelected}
+                        onClose={() => setIsPresetsPanelOpen(false)}
                     />
                 )}
                 <img
