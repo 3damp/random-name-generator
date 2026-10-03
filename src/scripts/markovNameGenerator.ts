@@ -1,5 +1,7 @@
 const NAME_BOUNDARY = "\n"
 const MAX_GENERATION_ATTEMPTS = 200
+export const NO_SAMPLE_NAMES_MESSAGE = "Add some names"
+export const NO_FITTING_NAME_MESSAGE = "No name fits"
 
 type NextLetterCounts = Record<string, number>
 type TransitionTable = Map<string, NextLetterCounts>
@@ -14,11 +16,33 @@ export type NameLengthRange = {
     maxLength: number
 }
 
+function normalizeName(name: string): string {
+    return name.trim().toLowerCase()
+}
+
 export function parseNameList(text: string): string[] {
     return text
         .split(/[\n,]/)
-        .map((name) => name.trim().toLowerCase())
+        .map(normalizeName)
         .filter((name) => name.length > 0)
+}
+
+export function moveNameToTopOfNameListText(
+    text: string,
+    name: string,
+): string {
+    if (text.trim() === "") return name.trim()
+    const normalizedName = normalizeName(name)
+    const linesWithoutName = text.split("\n").flatMap((line) => {
+        const entries = line.split(",")
+        const remainingEntries = entries.filter(
+            (entry) => normalizeName(entry) !== normalizedName,
+        )
+        if (remainingEntries.length === entries.length) return [line]
+        if (remainingEntries.every((entry) => entry.trim() === "")) return []
+        return [remainingEntries.map((entry) => entry.trim()).join(", ")]
+    })
+    return [name.trim(), ...linesWithoutName].join("\n")
 }
 
 export default class MarkovNameGenerator {
@@ -59,7 +83,7 @@ export default class MarkovNameGenerator {
         requiredStart = "",
         requiredEnd = "",
     ): string {
-        if (this.trainingNames.size === 0) return "Add some names"
+        if (this.trainingNames.size === 0) return NO_SAMPLE_NAMES_MESSAGE
 
         const nameStart = requiredStart.trim().toLowerCase()
         const nameEnd = requiredEnd.trim().toLowerCase()
@@ -85,7 +109,7 @@ export default class MarkovNameGenerator {
             minLength - nameStart.length,
             maxLength - nameStart.length,
         )
-        if (!canCompleteName) return "No name fits"
+        if (!canCompleteName) return NO_FITTING_NAME_MESSAGE
 
         let nameMatchingTrainingName = ""
         for (let attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {

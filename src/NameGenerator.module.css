@@ -92,6 +92,37 @@
     color: var(--accent-color-1);
 }
 
+.generated-name {
+    position: relative;
+}
+
+.add-as-sample-button {
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 10px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    font-weight: normal;
+    line-height: 1;
+    color: var(--accent-color-1);
+    background-color: transparent;
+    border: 1px solid var(--accent-color-2);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.add-as-sample-button:hover,
+.add-as-sample-button:focus-visible {
+    border-color: var(--accent-color-1);
+}
+
 .footer {
     display: flex;
     flex-direction: column;

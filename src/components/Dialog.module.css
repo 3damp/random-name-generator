@@ -28,14 +28,14 @@
     font-size: 1.1em;
 }
 
-.preset-name-label {
+.text-input-label {
     display: flex;
     flex-direction: column;
     gap: 6px;
     font-size: 0.9em;
 }
 
-.preset-name-input {
+.text-input {
     padding: 8px 10px;
     font-size: 1.1em;
     color: var(--main-text-color);
@@ -45,11 +45,11 @@
     outline: none;
 }
 
-.preset-name-input:focus {
+.text-input:focus {
     border-color: var(--accent-color-1);
 }
 
-.replace-warning {
+.warning-message {
     margin: -4px 0 0;
     font-size: 0.8em;
     color: #e0a030;
@@ -62,7 +62,7 @@
 }
 
 .cancel-button,
-.save-button {
+.submit-button {
     height: 36px;
     padding: 0 16px;
     font-size: 0.95em;
@@ -76,13 +76,13 @@
     border: 1px solid var(--accent-color-2);
 }
 
-.save-button {
+.submit-button {
     font-weight: bold;
     background-color: var(--accent-color-1);
     border: none;
 }
 
-.save-button:disabled {
+.submit-button:disabled {
     opacity: 0.4;
     cursor: default;
 }

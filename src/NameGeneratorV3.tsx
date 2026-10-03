@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react"
 import MarkovNameGenerator, {
+    moveNameToTopOfNameListText,
     NameLengthRange,
+    NO_FITTING_NAME_MESSAGE,
+    NO_SAMPLE_NAMES_MESSAGE,
     parseNameList,
 } from "./scripts/markovNameGenerator"
 import styles from "./NameGenerator.module.css"
@@ -8,7 +11,7 @@ import NumberInput from "./components/NumberInput"
 import TextArea from "./components/TextArea"
 import TextInput from "./components/TextInput"
 import PresetsPanel, { Preset } from "./components/PresetsPanel"
-import SavePresetDialog from "./components/SavePresetDialog"
+import TextInputDialog from "./components/TextInputDialog"
 import { BUILT_IN_MARKOV_NAME_PRESETS } from "./constants/markovNamePresets"
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
@@ -27,6 +30,10 @@ const LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY = "markovLoadedCustomPresetName"
 const MULTIPLE_NAMES_COUNT = 4
 const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
+const GENERATION_FAILURE_MESSAGES = [
+    NO_SAMPLE_NAMES_MESSAGE,
+    NO_FITTING_NAME_MESSAGE,
+]
 
 function isBoolean(value: unknown): value is boolean {
     return typeof value === "boolean"
@@ -120,7 +127,10 @@ const NameGeneratorV3: React.FC = () => {
         )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
     const [isSavePresetDialogOpen, setIsSavePresetDialogOpen] = useState(false)
-    const [generatedNames, setGeneratedNames] = useState(["???"])
+    const [generatedNames, setGeneratedNames] = useState<string[]>([])
+    const [nameToAddAsSample, setNameToAddAsSample] = useState<string | null>(
+        null,
+    )
 
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
     const nameGenerator = useMemo(
@@ -184,6 +194,26 @@ const NameGeneratorV3: React.FC = () => {
         setIsSavePresetDialogOpen(false)
     }
 
+    const addSampleName = (sampleName: string) => {
+        setNamesText(moveNameToTopOfNameListText(namesText, sampleName))
+        setNameToAddAsSample(null)
+    }
+
+    const renderGeneratedName = (generatedName: string) => (
+        <span className={styles["generated-name"]}>
+            {generatedName}
+            {!GENERATION_FAILURE_MESSAGES.includes(generatedName) && (
+                <button
+                    className={styles["add-as-sample-button"]}
+                    aria-label={`Add ${generatedName} as sample name`}
+                    onClick={() => setNameToAddAsSample(generatedName)}
+                >
+                    +
+                </button>
+            )}
+        </span>
+    )
+
     return (
         <div className={styles["main-container"]}>
             <header className={styles["app-header"]}>
@@ -236,18 +266,36 @@ const NameGeneratorV3: React.FC = () => {
                 />
             )}
             {isSavePresetDialogOpen && (
-                <SavePresetDialog
-                    initialPresetName={loadedCustomPresetName ?? ""}
-                    existingPresetNames={customPresets.map(
-                        (preset) => preset.label,
-                    )}
-                    onSave={saveCustomPreset}
+                <TextInputDialog
+                    title="Save preset"
+                    inputLabel="Preset name"
+                    initialText={loadedCustomPresetName ?? ""}
+                    submitButtonLabel="Save"
+                    getWarningMessage={(presetName) =>
+                        customPresets.some(
+                            (preset) => preset.label === presetName,
+                        )
+                            ? "This will replace the existing preset."
+                            : null
+                    }
+                    onSubmit={saveCustomPreset}
                     onClose={() => setIsSavePresetDialogOpen(false)}
                 />
             )}
+            {nameToAddAsSample !== null && (
+                <TextInputDialog
+                    title="Add as sample name:"
+                    initialText={nameToAddAsSample}
+                    submitButtonLabel="Add"
+                    onSubmit={addSampleName}
+                    onClose={() => setNameToAddAsSample(null)}
+                />
+            )}
             <section className={styles["generated-names-display"]}>
-                {generatedNames.length === 1 ? (
-                    <h1>{generatedNames[0]}</h1>
+                {generatedNames.length === 0 ? (
+                    <h1>???</h1>
+                ) : generatedNames.length === 1 ? (
+                    <h1>{renderGeneratedName(generatedNames[0])}</h1>
                 ) : (
                     <div
                         style={{
@@ -259,7 +307,9 @@ const NameGeneratorV3: React.FC = () => {
                         }}
                     >
                         {generatedNames.map((generatedName, index) => (
-                            <span key={index}>{generatedName}</span>
+                            <span key={index}>
+                                {renderGeneratedName(generatedName)}
+                            </span>
                         ))}
                     </div>
                 )}
