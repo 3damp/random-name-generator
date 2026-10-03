@@ -307,7 +307,17 @@ const NameGeneratorV3: React.FC = () => {
                     aria-label={`Add ${generatedName} as sample name`}
                     onClick={() => setNameToAddAsSample(generatedName)}
                 >
-                    +
+                    <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                    >
+                        <line x1="7" y1="2" x2="7" y2="12" />
+                        <line x1="2" y1="7" x2="12" y2="7" />
+                    </svg>
                 </button>
             )}
         </span>
