@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import MarkovNameGenerator, {
     moveNameToTopOfNameListText,
     NameLengthRange,
@@ -13,7 +13,11 @@ import TextInput from "./components/TextInput"
 import PresetsPanel, { Preset } from "./components/PresetsPanel"
 import TextInputDialog from "./components/TextInputDialog"
 import ConfirmationDialog from "./components/ConfirmationDialog"
-import { BUILT_IN_MARKOV_NAME_PRESETS } from "./constants/markovNamePresets"
+import {
+    BUILT_IN_MARKOV_NAME_PRESETS,
+    DEFAULT_CUSTOM_MARKOV_NAME_PRESETS,
+    MarkovNamePresetSettings,
+} from "./constants/markovNamePresets"
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 import folderIcon from "./images/folder.png"
@@ -28,6 +32,8 @@ const REQUIRED_NAME_START_STORAGE_KEY = "markovRequiredNameStart"
 const REQUIRED_NAME_END_STORAGE_KEY = "markovRequiredNameEnd"
 const CUSTOM_PRESETS_STORAGE_KEY = "markovCustomPresets"
 const LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY = "markovLoadedCustomPresetName"
+const HAS_ADDED_DEFAULT_CUSTOM_PRESETS_STORAGE_KEY =
+    "markovHasAddedDefaultCustomPresets"
 const MULTIPLE_NAMES_COUNT = 4
 const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
@@ -60,16 +66,54 @@ function isStringOrNull(value: unknown): value is string | null {
     return value === null || isString(value)
 }
 
-function isCustomPresetList(value: unknown): value is Preset<string[]>[] {
+function isStringList(value: unknown): value is string[] {
+    return Array.isArray(value) && value.every(isString)
+}
+
+function isMarkovNamePresetSettings(
+    value: unknown,
+): value is MarkovNamePresetSettings {
+    if (typeof value !== "object" || value === null) return false
+    const {
+        sampleNames,
+        lengthRange,
+        blendedContextLength,
+        requiredNameStart,
+        requiredNameEnd,
+    } = value as Partial<MarkovNamePresetSettings>
+    return (
+        isStringList(sampleNames) &&
+        (lengthRange === undefined || isLengthRange(lengthRange)) &&
+        (blendedContextLength === undefined ||
+            isValidBlendedContextLength(blendedContextLength)) &&
+        (requiredNameStart === undefined || isString(requiredNameStart)) &&
+        (requiredNameEnd === undefined || isString(requiredNameEnd))
+    )
+}
+
+type StoredCustomPreset = Preset<MarkovNamePresetSettings | string[]>
+
+function isStoredCustomPresetList(
+    value: unknown,
+): value is StoredCustomPreset[] {
     return (
         Array.isArray(value) &&
         value.every(
             (preset) =>
                 isString(preset?.label) &&
-                Array.isArray(preset?.value) &&
-                preset.value.every(isString),
+                (isStringList(preset?.value) ||
+                    isMarkovNamePresetSettings(preset?.value)),
         )
     )
+}
+
+function convertSampleNameOnlyPresets(
+    storedCustomPresets: StoredCustomPreset[],
+): Preset<MarkovNamePresetSettings>[] {
+    return storedCustomPresets.map(({ label, value }) => ({
+        label,
+        value: isStringList(value) ? { sampleNames: value } : value,
+    }))
 }
 
 function isLengthRange(value: unknown): value is NameLengthRange {
@@ -115,11 +159,17 @@ const NameGeneratorV3: React.FC = () => {
         "",
         isString,
     )
-    const [customPresets, setCustomPresets] = useLocalStorageState(
+    const [storedCustomPresets, setCustomPresets] = useLocalStorageState(
         CUSTOM_PRESETS_STORAGE_KEY,
         [],
-        isCustomPresetList,
+        isStoredCustomPresetList,
     )
+    const [hasAddedDefaultCustomPresets, setHasAddedDefaultCustomPresets] =
+        useLocalStorageState(
+            HAS_ADDED_DEFAULT_CUSTOM_PRESETS_STORAGE_KEY,
+            false,
+            isBoolean,
+        )
     const [loadedCustomPresetName, setLoadedCustomPresetName] =
         useLocalStorageState(
             LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY,
@@ -136,7 +186,29 @@ const NameGeneratorV3: React.FC = () => {
         null,
     )
 
+    const customPresets = useMemo(
+        () => convertSampleNameOnlyPresets(storedCustomPresets),
+        [storedCustomPresets],
+    )
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
+
+    useEffect(() => {
+        if (hasAddedDefaultCustomPresets) return
+        const missingDefaultCustomPresets =
+            DEFAULT_CUSTOM_MARKOV_NAME_PRESETS.filter(
+                (defaultPreset) =>
+                    !customPresets.some(
+                        (preset) => preset.label === defaultPreset.label,
+                    ),
+            )
+        setCustomPresets([...missingDefaultCustomPresets, ...customPresets])
+        setHasAddedDefaultCustomPresets(true)
+    }, [
+        hasAddedDefaultCustomPresets,
+        customPresets,
+        setCustomPresets,
+        setHasAddedDefaultCustomPresets,
+    ])
     const nameGenerator = useMemo(
         () => new MarkovNameGenerator(trainingNames, blendedContextLength),
         [trainingNames, blendedContextLength],
@@ -174,16 +246,33 @@ const NameGeneratorV3: React.FC = () => {
     }
 
     const onPresetSelected = (
-        names: string[],
+        presetSettings: MarkovNamePresetSettings,
         customPresetName: string | null,
     ) => {
-        setNamesText(names.join("\n"))
+        setNamesText(presetSettings.sampleNames.join("\n"))
+        if (presetSettings.lengthRange)
+            setLengthRange(presetSettings.lengthRange)
+        if (presetSettings.blendedContextLength !== undefined)
+            setBlendedContextLength(presetSettings.blendedContextLength)
+        if (presetSettings.requiredNameStart !== undefined)
+            setRequiredNameStart(presetSettings.requiredNameStart)
+        if (presetSettings.requiredNameEnd !== undefined)
+            setRequiredNameEnd(presetSettings.requiredNameEnd)
         setLoadedCustomPresetName(customPresetName)
         setIsPresetsPanelOpen(false)
     }
 
     const saveCustomPreset = (presetName: string) => {
-        const savedPreset = { label: presetName, value: trainingNames }
+        const savedPreset = {
+            label: presetName,
+            value: {
+                sampleNames: trainingNames,
+                lengthRange,
+                blendedContextLength,
+                requiredNameStart,
+                requiredNameEnd,
+            },
+        }
         const isReplacingExistingPreset = customPresets.some(
             (preset) => preset.label === presetName,
         )
