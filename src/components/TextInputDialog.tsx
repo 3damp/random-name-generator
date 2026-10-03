@@ -1,5 +1,6 @@
-import { FormEvent, useEffect, useId, useState } from "react"
-import styles from "./TextInputDialog.module.css"
+import { FormEvent, useId, useState } from "react"
+import useCloseOnEscapeKey from "../hooks/useCloseOnEscapeKey"
+import styles from "./Dialog.module.css"
 
 export default function TextInputDialog({
     title,
@@ -23,13 +24,7 @@ export default function TextInputDialog({
     const trimmedText = text.trim()
     const warningMessage = getWarningMessage?.(trimmedText) ?? null
 
-    useEffect(() => {
-        const closeOnEscapeKey = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose()
-        }
-        window.addEventListener("keydown", closeOnEscapeKey)
-        return () => window.removeEventListener("keydown", closeOnEscapeKey)
-    }, [onClose])
+    useCloseOnEscapeKey(onClose, { blocksEscapeKeyForLayersBelow: true })
 
     const onFormSubmit = (event: FormEvent) => {
         event.preventDefault()

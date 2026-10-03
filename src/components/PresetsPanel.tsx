@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import useCloseOnEscapeKey from "../hooks/useCloseOnEscapeKey"
 import styles from "./PresetsPanel.module.css"
 
 export type Preset<PresetValue> = {
@@ -25,36 +25,16 @@ export default function PresetsPanel<PresetValue>({
     customPresets,
     builtInPresets,
     onSelect,
+    onDeleteCustomPreset,
     onClose,
 }: {
     customPresets?: Preset<PresetValue>[]
     builtInPresets: BuiltInPreset<PresetValue>[]
     onSelect: (value: PresetValue, customPresetName: string | null) => void
+    onDeleteCustomPreset?: (customPresetName: string) => void
     onClose: () => void
 }): JSX.Element {
-    useEffect(() => {
-        const closeOnEscapeKey = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose()
-        }
-        window.addEventListener("keydown", closeOnEscapeKey)
-        return () => window.removeEventListener("keydown", closeOnEscapeKey)
-    }, [onClose])
-
-    const renderSelectablePresetRow = (
-        preset: Preset<PresetValue>,
-        isCustomPreset: boolean,
-    ) => (
-        <li key={preset.label}>
-            <button
-                className={styles["preset-button"]}
-                onClick={() =>
-                    onSelect(preset.value, isCustomPreset ? preset.label : null)
-                }
-            >
-                {preset.label}
-            </button>
-        </li>
-    )
+    useCloseOnEscapeKey(onClose)
 
     return (
         <>
@@ -100,9 +80,59 @@ export default function PresetsPanel<PresetValue>({
                                 </p>
                             ) : (
                                 <ul className={styles["preset-list"]}>
-                                    {customPresets.map((preset) =>
-                                        renderSelectablePresetRow(preset, true),
-                                    )}
+                                    {customPresets.map((preset) => (
+                                        <li
+                                            key={preset.label}
+                                            className={
+                                                styles["custom-preset-row"]
+                                            }
+                                        >
+                                            <button
+                                                className={
+                                                    styles["preset-button"]
+                                                }
+                                                onClick={() =>
+                                                    onSelect(
+                                                        preset.value,
+                                                        preset.label,
+                                                    )
+                                                }
+                                            >
+                                                {preset.label}
+                                            </button>
+                                            {onDeleteCustomPreset && (
+                                                <button
+                                                    className={
+                                                        styles[
+                                                            "delete-preset-button"
+                                                        ]
+                                                    }
+                                                    aria-label={`Delete preset ${preset.label}`}
+                                                    onClick={() =>
+                                                        onDeleteCustomPreset(
+                                                            preset.label,
+                                                        )
+                                                    }
+                                                >
+                                                    <svg
+                                                        width="18"
+                                                        height="18"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M3 6h18" />
+                                                        <path d="M8 6V4h8v2" />
+                                                        <path d="M6 6l1 14h10l1-14" />
+                                                        <path d="M10 10v6M14 10v6" />
+                                                    </svg>
+                                                </button>
+                                            )}
+                                        </li>
+                                    ))}
                                 </ul>
                             )}
                         </section>
@@ -144,7 +174,16 @@ export default function PresetsPanel<PresetValue>({
                                         </div>
                                     </li>
                                 ) : (
-                                    renderSelectablePresetRow(preset, false)
+                                    <li key={preset.label}>
+                                        <button
+                                            className={styles["preset-button"]}
+                                            onClick={() =>
+                                                onSelect(preset.value, null)
+                                            }
+                                        >
+                                            {preset.label}
+                                        </button>
+                                    </li>
                                 ),
                             )}
                         </ul>

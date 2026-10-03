@@ -12,6 +12,7 @@ import TextArea from "./components/TextArea"
 import TextInput from "./components/TextInput"
 import PresetsPanel, { Preset } from "./components/PresetsPanel"
 import TextInputDialog from "./components/TextInputDialog"
+import ConfirmationDialog from "./components/ConfirmationDialog"
 import { BUILT_IN_MARKOV_NAME_PRESETS } from "./constants/markovNamePresets"
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
@@ -128,6 +129,9 @@ const NameGeneratorV3: React.FC = () => {
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
     const [isSavePresetDialogOpen, setIsSavePresetDialogOpen] = useState(false)
     const [generatedNames, setGeneratedNames] = useState<string[]>([])
+    const [presetNameToDelete, setPresetNameToDelete] = useState<string | null>(
+        null,
+    )
     const [nameToAddAsSample, setNameToAddAsSample] = useState<string | null>(
         null,
     )
@@ -192,6 +196,15 @@ const NameGeneratorV3: React.FC = () => {
         )
         setLoadedCustomPresetName(presetName)
         setIsSavePresetDialogOpen(false)
+    }
+
+    const deleteCustomPreset = (presetName: string) => {
+        setCustomPresets(
+            customPresets.filter((preset) => preset.label !== presetName),
+        )
+        if (loadedCustomPresetName === presetName)
+            setLoadedCustomPresetName(null)
+        setPresetNameToDelete(null)
     }
 
     const addSampleName = (sampleName: string) => {
@@ -262,6 +275,7 @@ const NameGeneratorV3: React.FC = () => {
                     customPresets={customPresets}
                     builtInPresets={BUILT_IN_MARKOV_NAME_PRESETS}
                     onSelect={onPresetSelected}
+                    onDeleteCustomPreset={setPresetNameToDelete}
                     onClose={() => setIsPresetsPanelOpen(false)}
                 />
             )}
@@ -280,6 +294,15 @@ const NameGeneratorV3: React.FC = () => {
                     }
                     onSubmit={saveCustomPreset}
                     onClose={() => setIsSavePresetDialogOpen(false)}
+                />
+            )}
+            {presetNameToDelete !== null && (
+                <ConfirmationDialog
+                    title="Delete preset"
+                    message={`Delete the preset "${presetNameToDelete}"? This cannot be undone.`}
+                    confirmButtonLabel="Delete"
+                    onConfirm={() => deleteCustomPreset(presetNameToDelete)}
+                    onClose={() => setPresetNameToDelete(null)}
                 />
             )}
             {nameToAddAsSample !== null && (

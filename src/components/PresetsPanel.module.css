@@ -132,6 +132,35 @@
     background-color: #2c2c2c;
 }
 
+.custom-preset-row {
+    display: flex;
+    border-bottom: 1px solid #333;
+}
+
+.custom-preset-row .preset-button {
+    flex-grow: 1;
+    border-bottom: none;
+}
+
+.delete-preset-button {
+    width: 48px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0;
+    color: var(--accent-color-2);
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.delete-preset-button:hover,
+.delete-preset-button:focus-visible {
+    color: #e04434;
+    background-color: #2c2c2c;
+}
+
 @keyframes slide-in-from-left {
     from {
         transform: translateX(-100%);
