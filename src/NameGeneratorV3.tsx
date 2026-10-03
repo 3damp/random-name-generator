@@ -14,10 +14,10 @@ import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 import folderIcon from "./images/folder.png"
 
-const DEFAULT_CONTEXT_LENGTH = 2
-const MAX_CONTEXT_LENGTH = 4
+const DEFAULT_BLENDED_CONTEXT_LENGTH = 2
+const MAX_BLENDED_CONTEXT_LENGTH = 4
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
-const CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
+const BLENDED_CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
 const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
 const GENERATE_MULTIPLE_NAMES_STORAGE_KEY = "markovGenerateMultipleNames"
 const REQUIRED_NAME_START_STORAGE_KEY = "markovRequiredNameStart"
@@ -36,11 +36,11 @@ function isString(value: unknown): value is string {
     return typeof value === "string"
 }
 
-function isValidContextLength(value: unknown): value is number {
+function isValidBlendedContextLength(value: unknown): value is number {
     return (
-        Number.isInteger(value) &&
-        (value as number) >= 1 &&
-        (value as number) <= MAX_CONTEXT_LENGTH
+        typeof value === "number" &&
+        value >= 1 &&
+        value <= MAX_BLENDED_CONTEXT_LENGTH
     )
 }
 
@@ -80,11 +80,12 @@ const NameGeneratorV3: React.FC = () => {
         DEFAULT_TRAINING_NAMES_TEXT,
         isString,
     )
-    const [contextLength, setContextLength] = useLocalStorageState(
-        CONTEXT_LENGTH_STORAGE_KEY,
-        DEFAULT_CONTEXT_LENGTH,
-        isValidContextLength,
-    )
+    const [blendedContextLength, setBlendedContextLength] =
+        useLocalStorageState(
+            BLENDED_CONTEXT_LENGTH_STORAGE_KEY,
+            DEFAULT_BLENDED_CONTEXT_LENGTH,
+            isValidBlendedContextLength,
+        )
     const [lengthRange, setLengthRange] = useLocalStorageState(
         LENGTH_RANGE_STORAGE_KEY,
         DEFAULT_LENGTH_RANGE,
@@ -123,8 +124,8 @@ const NameGeneratorV3: React.FC = () => {
 
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
     const nameGenerator = useMemo(
-        () => new MarkovNameGenerator(trainingNames, contextLength),
-        [trainingNames, contextLength],
+        () => new MarkovNameGenerator(trainingNames, blendedContextLength),
+        [trainingNames, blendedContextLength],
     )
 
     const onClickGenerate = () => {
@@ -289,7 +290,17 @@ const NameGeneratorV3: React.FC = () => {
                                 fontSize: "1.44em",
                             }}
                         >
-                            Similarity to samples
+                            <span
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                }}
+                            >
+                                Similarity to samples
+                                <span style={{ opacity: 0.6 }}>
+                                    {blendedContextLength.toFixed(1)}
+                                </span>
+                            </span>
                             <div
                                 style={{
                                     display: "flex",
@@ -302,11 +313,11 @@ const NameGeneratorV3: React.FC = () => {
                                 <input
                                     type="range"
                                     min={1}
-                                    max={MAX_CONTEXT_LENGTH}
-                                    step={1}
-                                    value={contextLength}
+                                    max={MAX_BLENDED_CONTEXT_LENGTH}
+                                    step={0.1}
+                                    value={blendedContextLength}
                                     onChange={(event) =>
-                                        setContextLength(
+                                        setBlendedContextLength(
                                             Number(event.target.value),
                                         )
                                     }

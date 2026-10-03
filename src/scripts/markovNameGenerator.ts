@@ -23,20 +23,34 @@ export function parseNameList(text: string): string[] {
 
 export default class MarkovNameGenerator {
     private readonly trainingNames: Set<string>
-    private readonly transitionTable: TransitionTable
+    private readonly shorterContextLength: number
+    private readonly longerContextLength: number
+    private readonly longerContextProbability: number
+    private readonly shorterContextTransitionTable: TransitionTable
+    private readonly longerContextTransitionTable: TransitionTable
     private readonly nameBoundaryContext: string
     private readonly endableLetterCountsByMaxLengthAndEnding = new Map<
         string,
         EndableLetterCountsByContext
     >()
 
-    constructor(
-        names: string[],
-        private readonly contextLength: number,
-    ) {
+    constructor(names: string[], blendedContextLength: number) {
         this.trainingNames = new Set(names)
-        this.transitionTable = buildTransitionTable(names, contextLength)
-        this.nameBoundaryContext = NAME_BOUNDARY.repeat(contextLength)
+        this.shorterContextLength = Math.floor(blendedContextLength)
+        this.longerContextLength = Math.ceil(blendedContextLength)
+        this.longerContextProbability =
+            blendedContextLength - this.shorterContextLength
+        this.shorterContextTransitionTable = buildTransitionTable(
+            names,
+            this.shorterContextLength,
+        )
+        this.longerContextTransitionTable =
+            this.longerContextLength === this.shorterContextLength
+                ? this.shorterContextTransitionTable
+                : buildTransitionTable(names, this.longerContextLength)
+        this.nameBoundaryContext = NAME_BOUNDARY.repeat(
+            this.longerContextLength,
+        )
     }
 
     generateName(
@@ -105,9 +119,11 @@ export default class MarkovNameGenerator {
 
         while (true) {
             const nameLength = name.length
-            const allowedNextLetterCounts = Object.fromEntries(
-                Object.entries(this.transitionTable.get(context) ?? {}).filter(
-                    ([letter]) =>
+            const keepAllowedNextLetters = (
+                nextLetterCounts: NextLetterCounts,
+            ): NextLetterCounts =>
+                Object.fromEntries(
+                    Object.entries(nextLetterCounts).filter(([letter]) =>
                         letter === NAME_BOUNDARY
                             ? nameLength >= minLength &&
                               matchedEndingLength === nameEnd.length
@@ -124,8 +140,18 @@ export default class MarkovNameGenerator {
                                   minLength - nameLength - 1,
                                   maxLength - nameLength - 1,
                               ),
-                ),
+                    ),
+                )
+
+            const [preferredNextLetterCounts, fallbackNextLetterCounts] =
+                this.getNextLetterCountsInRandomContextLengthOrder(context)
+            const preferredAllowedNextLetterCounts = keepAllowedNextLetters(
+                preferredNextLetterCounts,
             )
+            const allowedNextLetterCounts =
+                Object.keys(preferredAllowedNextLetterCounts).length > 0
+                    ? preferredAllowedNextLetterCounts
+                    : keepAllowedNextLetters(fallbackNextLetterCounts)
 
             const nextLetter = pickWeightedRandom(allowedNextLetterCounts)
             if (nextLetter === NAME_BOUNDARY) return name
@@ -147,10 +173,8 @@ export default class MarkovNameGenerator {
         let endableLetterCountsByContext =
             this.endableLetterCountsByMaxLengthAndEnding.get(cacheKey)
         if (!endableLetterCountsByContext) {
-            endableLetterCountsByContext = this.buildEndableLetterCountsByContext(
-                maxLength,
-                nameEnd,
-            )
+            endableLetterCountsByContext =
+                this.buildEndableLetterCountsByContext(maxLength, nameEnd)
             this.endableLetterCountsByMaxLengthAndEnding.set(
                 cacheKey,
                 endableLetterCountsByContext,
@@ -165,7 +189,9 @@ export default class MarkovNameGenerator {
     ): EndableLetterCountsByContext {
         const endableLetterCountsByContext: EndableLetterCountsByContext =
             new Map()
-        for (const [context, nextLetterCounts] of this.transitionTable) {
+        for (const context of this.longerContextTransitionTable.keys()) {
+            const canEndAtContext =
+                this.getPossibleNextLetters(context).includes(NAME_BOUNDARY)
             const endableLetterCountsByMatchedEndingLength = Array.from(
                 { length: nameEnd.length + 1 },
                 (_, matchedEndingLength) => {
@@ -173,7 +199,7 @@ export default class MarkovNameGenerator {
                         maxLength + 1,
                     ).fill(false)
                     canEndAfterLetterCount[0] =
-                        NAME_BOUNDARY in nextLetterCounts &&
+                        canEndAtContext &&
                         matchedEndingLength === nameEnd.length
                     return canEndAfterLetterCount
                 },
@@ -185,26 +211,26 @@ export default class MarkovNameGenerator {
         }
 
         for (let letterCount = 1; letterCount <= maxLength; letterCount++) {
-            for (const [context, nextLetterCounts] of this.transitionTable) {
+            for (const context of this.longerContextTransitionTable.keys()) {
+                const possibleNextLetters = this.getPossibleNextLetters(context)
                 const endableLetterCountsByMatchedEndingLength =
                     endableLetterCountsByContext.get(context)!
                 endableLetterCountsByMatchedEndingLength.forEach(
                     (canEndAfterLetterCount, matchedEndingLength) => {
-                        canEndAfterLetterCount[letterCount] = Object.keys(
-                            nextLetterCounts,
-                        ).some(
-                            (letter) =>
-                                letter !== NAME_BOUNDARY &&
-                                endableLetterCountsByContext.get(
-                                    this.appendToContext(context, letter),
-                                )?.[
-                                    getMatchedEndingLengthAfterLetter(
-                                        nameEnd,
-                                        matchedEndingLength,
-                                        letter,
-                                    )
-                                ]?.[letterCount - 1] === true,
-                        )
+                        canEndAfterLetterCount[letterCount] =
+                            possibleNextLetters.some(
+                                (letter) =>
+                                    letter !== NAME_BOUNDARY &&
+                                    endableLetterCountsByContext.get(
+                                        this.appendToContext(context, letter),
+                                    )?.[
+                                        getMatchedEndingLengthAfterLetter(
+                                            nameEnd,
+                                            matchedEndingLength,
+                                            letter,
+                                        )
+                                    ]?.[letterCount - 1] === true,
+                            )
                     },
                 )
             }
@@ -212,8 +238,45 @@ export default class MarkovNameGenerator {
         return endableLetterCountsByContext
     }
 
+    private getShorterContextNextLetterCounts(
+        context: string,
+    ): NextLetterCounts {
+        return (
+            this.shorterContextTransitionTable.get(
+                context.slice(-this.shorterContextLength),
+            ) ?? {}
+        )
+    }
+
+    private getLongerContextNextLetterCounts(
+        context: string,
+    ): NextLetterCounts {
+        return this.longerContextTransitionTable.get(context) ?? {}
+    }
+
+    private getNextLetterCountsInRandomContextLengthOrder(
+        context: string,
+    ): [NextLetterCounts, NextLetterCounts] {
+        const shorterContextNextLetterCounts =
+            this.getShorterContextNextLetterCounts(context)
+        const longerContextNextLetterCounts =
+            this.getLongerContextNextLetterCounts(context)
+        return Math.random() < this.longerContextProbability
+            ? [longerContextNextLetterCounts, shorterContextNextLetterCounts]
+            : [shorterContextNextLetterCounts, longerContextNextLetterCounts]
+    }
+
+    private getPossibleNextLetters(context: string): string[] {
+        return Array.from(
+            new Set([
+                ...Object.keys(this.getShorterContextNextLetterCounts(context)),
+                ...Object.keys(this.getLongerContextNextLetterCounts(context)),
+            ]),
+        )
+    }
+
     private appendToContext(context: string, letter: string): string {
-        return (context + letter).slice(-this.contextLength)
+        return (context + letter).slice(-this.longerContextLength)
     }
 }
 
