@@ -15,14 +15,15 @@ import TextInputDialog from "./components/TextInputDialog"
 import ConfirmationDialog from "./components/ConfirmationDialog"
 import {
     BUILT_IN_MARKOV_NAME_PRESETS,
+    buildPresetSettingsWithDefaultGenerationSettings,
     DEFAULT_CUSTOM_MARKOV_NAME_PRESETS,
+    DEFAULT_GENERATION_SETTINGS,
     MarkovNamePresetSettings,
 } from "./constants/markovNamePresets"
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 import folderIcon from "./images/folder.png"
 
-const DEFAULT_BLENDED_CONTEXT_LENGTH = 2
 const MAX_BLENDED_CONTEXT_LENGTH = 4
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
 const BLENDED_CONTEXT_LENGTH_STORAGE_KEY = "markovContextLength"
@@ -35,7 +36,6 @@ const LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY = "markovLoadedCustomPresetName"
 const HAS_ADDED_DEFAULT_CUSTOM_PRESETS_STORAGE_KEY =
     "markovHasAddedDefaultCustomPresets"
 const MULTIPLE_NAMES_COUNT = 4
-const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 9 }
 const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
 const GENERATION_FAILURE_MESSAGES = [
     NO_SAMPLE_NAMES_MESSAGE,
@@ -83,11 +83,10 @@ function isMarkovNamePresetSettings(
     } = value as Partial<MarkovNamePresetSettings>
     return (
         isStringList(sampleNames) &&
-        (lengthRange === undefined || isLengthRange(lengthRange)) &&
-        (blendedContextLength === undefined ||
-            isValidBlendedContextLength(blendedContextLength)) &&
-        (requiredNameStart === undefined || isString(requiredNameStart)) &&
-        (requiredNameEnd === undefined || isString(requiredNameEnd))
+        isLengthRange(lengthRange) &&
+        isValidBlendedContextLength(blendedContextLength) &&
+        isString(requiredNameStart) &&
+        isString(requiredNameEnd)
     )
 }
 
@@ -112,7 +111,9 @@ function convertSampleNameOnlyPresets(
 ): Preset<MarkovNamePresetSettings>[] {
     return storedCustomPresets.map(({ label, value }) => ({
         label,
-        value: isStringList(value) ? { sampleNames: value } : value,
+        value: isStringList(value)
+            ? buildPresetSettingsWithDefaultGenerationSettings(value)
+            : value,
     }))
 }
 
@@ -135,12 +136,12 @@ const NameGeneratorV3: React.FC = () => {
     const [blendedContextLength, setBlendedContextLength] =
         useLocalStorageState(
             BLENDED_CONTEXT_LENGTH_STORAGE_KEY,
-            DEFAULT_BLENDED_CONTEXT_LENGTH,
+            DEFAULT_GENERATION_SETTINGS.blendedContextLength,
             isValidBlendedContextLength,
         )
     const [lengthRange, setLengthRange] = useLocalStorageState(
         LENGTH_RANGE_STORAGE_KEY,
-        DEFAULT_LENGTH_RANGE,
+        DEFAULT_GENERATION_SETTINGS.lengthRange,
         isLengthRange,
     )
     const [isGeneratingMultipleNames, setIsGeneratingMultipleNames] =
@@ -151,12 +152,12 @@ const NameGeneratorV3: React.FC = () => {
         )
     const [requiredNameStart, setRequiredNameStart] = useLocalStorageState(
         REQUIRED_NAME_START_STORAGE_KEY,
-        "",
+        DEFAULT_GENERATION_SETTINGS.requiredNameStart,
         isString,
     )
     const [requiredNameEnd, setRequiredNameEnd] = useLocalStorageState(
         REQUIRED_NAME_END_STORAGE_KEY,
-        "",
+        DEFAULT_GENERATION_SETTINGS.requiredNameEnd,
         isString,
     )
     const [storedCustomPresets, setCustomPresets] = useLocalStorageState(
@@ -250,14 +251,10 @@ const NameGeneratorV3: React.FC = () => {
         customPresetName: string | null,
     ) => {
         setNamesText(presetSettings.sampleNames.join("\n"))
-        if (presetSettings.lengthRange)
-            setLengthRange(presetSettings.lengthRange)
-        if (presetSettings.blendedContextLength !== undefined)
-            setBlendedContextLength(presetSettings.blendedContextLength)
-        if (presetSettings.requiredNameStart !== undefined)
-            setRequiredNameStart(presetSettings.requiredNameStart)
-        if (presetSettings.requiredNameEnd !== undefined)
-            setRequiredNameEnd(presetSettings.requiredNameEnd)
+        setLengthRange(presetSettings.lengthRange)
+        setBlendedContextLength(presetSettings.blendedContextLength)
+        setRequiredNameStart(presetSettings.requiredNameStart)
+        setRequiredNameEnd(presetSettings.requiredNameEnd)
         setLoadedCustomPresetName(customPresetName)
         setIsPresetsPanelOpen(false)
     }

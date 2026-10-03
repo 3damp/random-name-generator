@@ -17,10 +17,26 @@ import { ENGLISH_WORDS } from "./englishWords"
 
 export type MarkovNamePresetSettings = {
     sampleNames: string[]
-    lengthRange?: NameLengthRange
-    blendedContextLength?: number
-    requiredNameStart?: string
-    requiredNameEnd?: string
+    lengthRange: NameLengthRange
+    blendedContextLength: number
+    requiredNameStart: string
+    requiredNameEnd: string
+}
+
+export const DEFAULT_GENERATION_SETTINGS: Omit<
+    MarkovNamePresetSettings,
+    "sampleNames"
+> = {
+    lengthRange: { minLength: 5, maxLength: 9 },
+    blendedContextLength: 2.5,
+    requiredNameStart: "",
+    requiredNameEnd: "",
+}
+
+export function buildPresetSettingsWithDefaultGenerationSettings(
+    sampleNames: string[],
+): MarkovNamePresetSettings {
+    return { ...DEFAULT_GENERATION_SETTINGS, sampleNames }
 }
 
 export type NamesByGender = {
@@ -36,17 +52,38 @@ function buildPresetWithGenderVariants(
     return {
         label,
         variants: [
-            { label: "Male", value: { sampleNames: male } },
-            { label: "Female", value: { sampleNames: female } },
-            { label: "Neutral", value: { sampleNames: neutral } },
+            {
+                label: "Male",
+                value: buildPresetSettingsWithDefaultGenerationSettings(male),
+            },
+            {
+                label: "Female",
+                value: buildPresetSettingsWithDefaultGenerationSettings(female),
+            },
+            {
+                label: "Neutral",
+                value: buildPresetSettingsWithDefaultGenerationSettings(
+                    neutral,
+                ),
+            },
         ],
     }
 }
 
 export const BUILT_IN_MARKOV_NAME_PRESETS: BuiltInPreset<MarkovNamePresetSettings>[] =
     [
-        { label: "English words", value: { sampleNames: ENGLISH_WORDS } },
-        { label: "Spanish words", value: { sampleNames: SPANISH_WORDS } },
+        {
+            label: "English words",
+            value: buildPresetSettingsWithDefaultGenerationSettings(
+                ENGLISH_WORDS,
+            ),
+        },
+        {
+            label: "Spanish words",
+            value: buildPresetSettingsWithDefaultGenerationSettings(
+                SPANISH_WORDS,
+            ),
+        },
         buildPresetWithGenderVariants("English names", ENGLISH_NAMES),
         buildPresetWithGenderVariants("Fantasy names", FANTASY_NAMES),
         buildPresetWithGenderVariants("Elvish names", ELVISH_NAMES),
@@ -62,11 +99,11 @@ export const DEFAULT_CUSTOM_MARKOV_NAME_PRESETS: Preset<MarkovNamePresetSettings
         {
             label: "Funny Spanish",
             value: {
-                sampleNames: SPANISH_WORDS,
+                ...buildPresetSettingsWithDefaultGenerationSettings(
+                    SPANISH_WORDS,
+                ),
                 lengthRange: { minLength: 10, maxLength: 12 },
                 blendedContextLength: 2.5,
-                requiredNameStart: "",
-                requiredNameEnd: "",
             },
         },
     ]
