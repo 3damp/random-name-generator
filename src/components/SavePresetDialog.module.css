@@ -1,0 +1,88 @@
+.backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    background-color: rgba(0, 0, 0, 0.6);
+}
+
+.dialog {
+    position: fixed;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 11;
+    width: min(360px, calc(100% - 32px));
+    box-sizing: border-box;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background-color: var(--main-bg-color);
+    border: 1px solid var(--accent-color-2);
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+
+.dialog-title {
+    margin: 0;
+    font-size: 1.1em;
+}
+
+.preset-name-label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.9em;
+}
+
+.preset-name-input {
+    padding: 8px 10px;
+    font-size: 1.1em;
+    color: var(--main-text-color);
+    background-color: #111;
+    border: 1px solid var(--accent-color-2);
+    border-radius: 4px;
+    outline: none;
+}
+
+.preset-name-input:focus {
+    border-color: var(--accent-color-1);
+}
+
+.replace-warning {
+    margin: -4px 0 0;
+    font-size: 0.8em;
+    color: #e0a030;
+}
+
+.dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.cancel-button,
+.save-button {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 0.95em;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancel-button {
+    color: var(--main-text-color);
+    background-color: transparent;
+    border: 1px solid var(--accent-color-2);
+}
+
+.save-button {
+    font-weight: bold;
+    background-color: var(--accent-color-1);
+    border: none;
+}
+
+.save-button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}

@@ -7,9 +7,12 @@ import styles from "./NameGenerator.module.css"
 import NumberInput from "./components/NumberInput"
 import TextArea from "./components/TextArea"
 import TextInput from "./components/TextInput"
-import PresetsPanel from "./components/PresetsPanel"
-import { MARKOV_NAME_PRESET_GROUPS } from "./constants/markovNamePresets"
+import PresetsPanel, { Preset } from "./components/PresetsPanel"
+import SavePresetDialog from "./components/SavePresetDialog"
+import { BUILT_IN_MARKOV_NAME_PRESETS } from "./constants/markovNamePresets"
+import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
+import folderIcon from "./images/folder.png"
 
 const DEFAULT_CONTEXT_LENGTH = 2
 const MAX_CONTEXT_LENGTH = 4
@@ -19,10 +22,11 @@ const LENGTH_RANGE_STORAGE_KEY = "markovLengthRange"
 const GENERATE_MULTIPLE_NAMES_STORAGE_KEY = "markovGenerateMultipleNames"
 const REQUIRED_NAME_START_STORAGE_KEY = "markovRequiredNameStart"
 const REQUIRED_NAME_END_STORAGE_KEY = "markovRequiredNameEnd"
+const CUSTOM_PRESETS_STORAGE_KEY = "markovCustomPresets"
+const LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY = "markovLoadedCustomPresetName"
 const MULTIPLE_NAMES_COUNT = 4
 const DEFAULT_LENGTH_RANGE: NameLengthRange = { minLength: 5, maxLength: 9 }
-const DEFAULT_TRAINING_NAMES_TEXT =
-    MARKOV_NAME_PRESET_GROUPS[5].presets[2].value.join("\n")
+const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
 
 function isBoolean(value: unknown): value is boolean {
     return typeof value === "boolean"
@@ -42,6 +46,22 @@ function isValidContextLength(value: unknown): value is number {
 
 function isPositiveInteger(value: unknown): value is number {
     return Number.isInteger(value) && (value as number) >= 1
+}
+
+function isStringOrNull(value: unknown): value is string | null {
+    return value === null || isString(value)
+}
+
+function isCustomPresetList(value: unknown): value is Preset<string[]>[] {
+    return (
+        Array.isArray(value) &&
+        value.every(
+            (preset) =>
+                isString(preset?.label) &&
+                Array.isArray(preset?.value) &&
+                preset.value.every(isString),
+        )
+    )
 }
 
 function isLengthRange(value: unknown): value is NameLengthRange {
@@ -86,7 +106,19 @@ const NameGeneratorV3: React.FC = () => {
         "",
         isString,
     )
+    const [customPresets, setCustomPresets] = useLocalStorageState(
+        CUSTOM_PRESETS_STORAGE_KEY,
+        [],
+        isCustomPresetList,
+    )
+    const [loadedCustomPresetName, setLoadedCustomPresetName] =
+        useLocalStorageState(
+            LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY,
+            null,
+            isStringOrNull,
+        )
     const [isPresetsPanelOpen, setIsPresetsPanelOpen] = useState(false)
+    const [isSavePresetDialogOpen, setIsSavePresetDialogOpen] = useState(false)
     const [generatedNames, setGeneratedNames] = useState(["???"])
 
     const trainingNames = useMemo(() => parseNameList(namesText), [namesText])
@@ -126,38 +158,93 @@ const NameGeneratorV3: React.FC = () => {
         setLengthRange(newRange)
     }
 
-    const onPresetSelected = (names: string[]) => {
+    const onPresetSelected = (
+        names: string[],
+        customPresetName: string | null,
+    ) => {
         setNamesText(names.join("\n"))
+        setLoadedCustomPresetName(customPresetName)
         setIsPresetsPanelOpen(false)
+    }
+
+    const saveCustomPreset = (presetName: string) => {
+        const savedPreset = { label: presetName, value: trainingNames }
+        const isReplacingExistingPreset = customPresets.some(
+            (preset) => preset.label === presetName,
+        )
+        setCustomPresets(
+            isReplacingExistingPreset
+                ? customPresets.map((preset) =>
+                      preset.label === presetName ? savedPreset : preset,
+                  )
+                : [...customPresets, savedPreset],
+        )
+        setLoadedCustomPresetName(presetName)
+        setIsSavePresetDialogOpen(false)
     }
 
     return (
         <div className={styles["main-container"]}>
-            <header className={styles["header"]}>
-                {isPresetsPanelOpen && (
-                    <PresetsPanel
-                        presetGroups={MARKOV_NAME_PRESET_GROUPS}
-                        onSelect={onPresetSelected}
-                        onClose={() => setIsPresetsPanelOpen(false)}
-                    />
-                )}
+            <header className={styles["app-header"]}>
+                <div className={styles["header-icon-buttons"]}>
+                    <button
+                        className={styles["header-icon-button"]}
+                        aria-label="Open presets"
+                        onClick={() =>
+                            setIsPresetsPanelOpen(!isPresetsPanelOpen)
+                        }
+                    >
+                        <img
+                            src={folderIcon}
+                            alt=""
+                            className={styles["presets-button-icon"]}
+                        />
+                    </button>
+                    <button
+                        className={styles["header-icon-button"]}
+                        aria-label="Save preset"
+                        onClick={() => setIsSavePresetDialogOpen(true)}
+                    >
+                        <svg
+                            className={styles["save-button-icon"]}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M5 3h11l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                            <path d="M7 3v5h8V3" />
+                            <rect x="7" y="13" width="10" height="8" />
+                        </svg>
+                    </button>
+                </div>
                 <button
-                    onClick={() => setIsPresetsPanelOpen(!isPresetsPanelOpen)}
-                    style={{
-                        position: "absolute",
-                        left: 20,
-                        top: 20,
-                        padding: "6px 12px",
-                        fontSize: "0.6em",
-                        color: "var(--accent-color-1)",
-                        backgroundColor: "transparent",
-                        border: "1px solid var(--accent-color-2)",
-                        borderRadius: 4,
-                        cursor: "pointer",
-                    }}
+                    className={styles["header-generate-button"]}
+                    onClick={onClickGenerate}
                 >
-                    Presets
+                    GENERATE
                 </button>
+            </header>
+            {isPresetsPanelOpen && (
+                <PresetsPanel
+                    customPresets={customPresets}
+                    builtInPresets={BUILT_IN_MARKOV_NAME_PRESETS}
+                    onSelect={onPresetSelected}
+                    onClose={() => setIsPresetsPanelOpen(false)}
+                />
+            )}
+            {isSavePresetDialogOpen && (
+                <SavePresetDialog
+                    initialPresetName={loadedCustomPresetName ?? ""}
+                    existingPresetNames={customPresets.map(
+                        (preset) => preset.label,
+                    )}
+                    onSave={saveCustomPreset}
+                    onClose={() => setIsSavePresetDialogOpen(false)}
+                />
+            )}
+            <section className={styles["generated-names-display"]}>
                 {generatedNames.length === 1 ? (
                     <h1>{generatedNames[0]}</h1>
                 ) : (
@@ -175,7 +262,7 @@ const NameGeneratorV3: React.FC = () => {
                         ))}
                     </div>
                 )}
-            </header>
+            </section>
             <div className={styles["scrollable-container"]}>
                 <div className={styles["scrollable-content"]}>
                     <div className={styles["field-container"]}>
@@ -273,14 +360,6 @@ const NameGeneratorV3: React.FC = () => {
                     </label>
                 </div>
             </div>
-            <footer className={styles["footer"]}>
-                <button
-                    className={styles["generate-button"]}
-                    onClick={onClickGenerate}
-                >
-                    GENERATE
-                </button>
-            </footer>
         </div>
     )
 }

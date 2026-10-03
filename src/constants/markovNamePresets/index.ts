@@ -1,4 +1,4 @@
-import { PresetGroup } from "src/components/PresetsPanel"
+import { BuiltInPreset, PresetWithVariants } from "src/components/PresetsPanel"
 import { JAPANESE_NAMES } from "./japaneseNames"
 import { ENGLISH_NAMES } from "./englishNames"
 import { NORSE_NAMES } from "./norseNames"
@@ -16,13 +16,13 @@ export type NamesByGender = {
     neutral: string[]
 }
 
-function buildStylePresetGroup(
-    styleLabel: string,
+function buildPresetWithGenderVariants(
+    label: string,
     { male, female, neutral }: NamesByGender,
-): PresetGroup<string[]> {
+): PresetWithVariants<string[]> {
     return {
-        label: styleLabel,
-        presets: [
+        label,
+        variants: [
             { label: "Male", value: male },
             { label: "Female", value: female },
             { label: "Neutral", value: neutral },
@@ -30,20 +30,15 @@ function buildStylePresetGroup(
     }
 }
 
-export const MARKOV_NAME_PRESET_GROUPS: PresetGroup<string[]>[] = [
-    {
-        label: "Words",
-        presets: [
-            { label: "English", value: ENGLISH_WORDS },
-            { label: "Spanish", value: SPANISH_WORDS },
-        ],
-    },
-    buildStylePresetGroup("English names", ENGLISH_NAMES),
-    buildStylePresetGroup("Fantasy names", FANTASY_NAMES),
-    buildStylePresetGroup("Elvish names", ELVISH_NAMES),
-    buildStylePresetGroup("Mordor names", MORDOR_NAMES),
-    buildStylePresetGroup("Norse names", NORSE_NAMES),
-    buildStylePresetGroup("Japanese names", JAPANESE_NAMES),
-    buildStylePresetGroup("Greek names", GREEK_NAMES),
-    buildStylePresetGroup("Latin names", LATIN_NAMES),
+export const BUILT_IN_MARKOV_NAME_PRESETS: BuiltInPreset<string[]>[] = [
+    { label: "English words", value: ENGLISH_WORDS },
+    { label: "Spanish words", value: SPANISH_WORDS },
+    buildPresetWithGenderVariants("English names", ENGLISH_NAMES),
+    buildPresetWithGenderVariants("Fantasy names", FANTASY_NAMES),
+    buildPresetWithGenderVariants("Elvish names", ELVISH_NAMES),
+    buildPresetWithGenderVariants("Mordor names", MORDOR_NAMES),
+    buildPresetWithGenderVariants("Norse names", NORSE_NAMES),
+    buildPresetWithGenderVariants("Japanese names", JAPANESE_NAMES),
+    buildPresetWithGenderVariants("Greek names", GREEK_NAMES),
+    buildPresetWithGenderVariants("Latin names", LATIN_NAMES),
 ]

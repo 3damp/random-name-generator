@@ -9,7 +9,7 @@ import shareIcon from "./images/share.png"
 import folderIcon from "./images/folder.png"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
-import PresetsPanel, { PresetGroup } from "./components/PresetsPanel"
+import PresetsPanel, { Preset } from "./components/PresetsPanel"
 import {
     DEFAULT_PARAMETERS,
     JAPANESE_PARAMETERS,
@@ -17,13 +17,9 @@ import {
 
 const nameGenerator = new RandomNameGenerator()
 
-const PARAMETER_PRESET_GROUPS: PresetGroup<Parameters>[] = [
-    {
-        presets: [
-            { label: "Default", value: DEFAULT_PARAMETERS },
-            { label: "Japanese", value: JAPANESE_PARAMETERS },
-        ],
-    },
+const PARAMETER_PRESETS: Preset<Parameters>[] = [
+    { label: "Default", value: DEFAULT_PARAMETERS },
+    { label: "Japanese", value: JAPANESE_PARAMETERS },
 ]
 
 const NameGenerator: React.FC = () => {
@@ -104,10 +100,10 @@ const NameGenerator: React.FC = () => {
 
     return (
         <div className={styles["main-container"]}>
-            <header className={styles["header"]}>
+            <header className={styles["generated-names-display"]}>
                 {isPresetsPanelOpen && (
                     <PresetsPanel
-                        presetGroups={PARAMETER_PRESET_GROUPS}
+                        builtInPresets={PARAMETER_PRESETS}
                         onSelect={onPresetSelected}
                         onClose={() => setIsPresetsPanelOpen(false)}
                     />

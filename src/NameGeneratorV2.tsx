@@ -47,7 +47,7 @@ const NameGeneratorV2: React.FC = () => {
 
     return (
         <div className={styles["main-container"]}>
-            <header className={styles["header"]}>
+            <header className={styles["generated-names-display"]}>
                 <h1>{name}</h1>
             </header>
             <div className={styles["scrollable-container"]}>
