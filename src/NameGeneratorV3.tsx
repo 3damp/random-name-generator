@@ -22,7 +22,7 @@ import {
     DEFAULT_GENERATION_SETTINGS,
     MarkovNamePresetSettings,
 } from "./constants/markovNamePresets"
-import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
+import { FANTASY_NAMES } from "./constants/markovNamePresets/fantasyNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 import useKeepElementAtVisibleViewportTop from "./hooks/useKeepElementAtVisibleViewportTop"
 import folderIcon from "./images/folder.png"
@@ -46,7 +46,7 @@ const HAS_ADDED_DEFAULT_CUSTOM_PRESETS_STORAGE_KEY =
 const SHARED_PRESET_URL_HASH_KEY = "preset"
 const SHARE_LINK_LENGTH_WARNING_THRESHOLD = 8000
 const MULTIPLE_NAMES_COUNT = 4
-const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
+const DEFAULT_TRAINING_NAMES_TEXT = FANTASY_NAMES.neutral.join("\n")
 const GENERATION_FAILURE_MESSAGES = [
     NO_SAMPLE_NAMES_MESSAGE,
     NO_FITTING_NAME_MESSAGE,
