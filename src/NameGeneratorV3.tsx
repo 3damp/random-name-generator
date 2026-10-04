@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import MarkovNameGenerator, {
@@ -24,6 +24,7 @@ import {
 } from "./constants/markovNamePresets"
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
+import useKeepElementAtVisibleViewportTop from "./hooks/useKeepElementAtVisibleViewportTop"
 import folderIcon from "./images/folder.png"
 import shareIcon from "./images/share.png"
 import {
@@ -253,6 +254,9 @@ const NameGeneratorV3: React.FC = () => {
         [trainingNames, blendedContextLength],
     )
 
+    const appHeaderRef = useRef<HTMLElement>(null)
+    useKeepElementAtVisibleViewportTop(appHeaderRef)
+
     const onClickGenerate = () => {
         const nameCount = isGeneratingMultipleNames ? MULTIPLE_NAMES_COUNT : 1
         setGeneratedNames(
@@ -436,7 +440,7 @@ const NameGeneratorV3: React.FC = () => {
 
     return (
         <div className={styles["main-container"]}>
-            <header className={styles["app-header"]}>
+            <header className={styles["app-header"]} ref={appHeaderRef}>
                 <div className={styles["header-icon-buttons"]}>
                     <button
                         className={styles["header-icon-button"]}
