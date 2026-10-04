@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { ToastContainer, toast } from "react-toastify"
+import "react-toastify/dist/ReactToastify.css"
 import MarkovNameGenerator, {
     moveNameToTopOfNameListText,
     NameLengthRange,
@@ -23,6 +25,11 @@ import {
 import { NORSE_NAMES } from "./constants/markovNamePresets/norseNames"
 import useLocalStorageState from "./hooks/useLocalStorageState"
 import folderIcon from "./images/folder.png"
+import shareIcon from "./images/share.png"
+import {
+    compressJsonToUrlSafeText,
+    decompressJsonFromUrlSafeText,
+} from "./scripts/compressedUrlText"
 
 const MAX_BLENDED_CONTEXT_LENGTH = 4
 const TRAINING_NAMES_STORAGE_KEY = "markovTrainingNames"
@@ -35,6 +42,8 @@ const CUSTOM_PRESETS_STORAGE_KEY = "markovCustomPresets"
 const LOADED_CUSTOM_PRESET_NAME_STORAGE_KEY = "markovLoadedCustomPresetName"
 const HAS_ADDED_DEFAULT_CUSTOM_PRESETS_STORAGE_KEY =
     "markovHasAddedDefaultCustomPresets"
+const SHARED_PRESET_URL_HASH_KEY = "preset"
+const SHARE_LINK_LENGTH_WARNING_THRESHOLD = 8000
 const MULTIPLE_NAMES_COUNT = 4
 const DEFAULT_TRAINING_NAMES_TEXT = NORSE_NAMES.neutral.join("\n")
 const GENERATION_FAILURE_MESSAGES = [
@@ -117,6 +126,31 @@ function convertSampleNameOnlyPresets(
     }))
 }
 
+type SharedPreset = {
+    presetName: string | null
+    settings: MarkovNamePresetSettings
+}
+
+function isSharedPreset(value: unknown): value is SharedPreset {
+    if (typeof value !== "object" || value === null) return false
+    const { presetName, settings } = value as Partial<SharedPreset>
+    return isStringOrNull(presetName) && isMarkovNamePresetSettings(settings)
+}
+
+function readSharedPresetTextFromUrlHash(): string | null {
+    return new URLSearchParams(window.location.hash.slice(1)).get(
+        SHARED_PRESET_URL_HASH_KEY,
+    )
+}
+
+function removeHashFromUrl() {
+    window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + window.location.search,
+    )
+}
+
 function isLengthRange(value: unknown): value is NameLengthRange {
     if (typeof value !== "object" || value === null) return false
     const { minLength, maxLength } = value as Partial<NameLengthRange>
@@ -186,6 +220,10 @@ const NameGeneratorV3: React.FC = () => {
     const [nameToAddAsSample, setNameToAddAsSample] = useState<string | null>(
         null,
     )
+    const [
+        sharedPresetNameToSaveAsCustomPreset,
+        setSharedPresetNameToSaveAsCustomPreset,
+    ] = useState<string | null>(null)
 
     const customPresets = useMemo(
         () => convertSampleNameOnlyPresets(storedCustomPresets),
@@ -246,17 +284,89 @@ const NameGeneratorV3: React.FC = () => {
         setLengthRange(newRange)
     }
 
+    const applyPresetSettings = useCallback(
+        (
+            presetSettings: MarkovNamePresetSettings,
+            customPresetName: string | null,
+        ) => {
+            setNamesText(presetSettings.sampleNames.join("\n"))
+            setLengthRange(presetSettings.lengthRange)
+            setBlendedContextLength(presetSettings.blendedContextLength)
+            setRequiredNameStart(presetSettings.requiredNameStart)
+            setRequiredNameEnd(presetSettings.requiredNameEnd)
+            setLoadedCustomPresetName(customPresetName)
+        },
+        [
+            setNamesText,
+            setLengthRange,
+            setBlendedContextLength,
+            setRequiredNameStart,
+            setRequiredNameEnd,
+            setLoadedCustomPresetName,
+        ],
+    )
+
+    useEffect(() => {
+        const importSharedPresetFromUrlHash = async () => {
+            const sharedPresetText = readSharedPresetTextFromUrlHash()
+            if (sharedPresetText === null) return
+            removeHashFromUrl()
+            try {
+                const sharedPreset =
+                    await decompressJsonFromUrlSafeText(sharedPresetText)
+                if (!isSharedPreset(sharedPreset))
+                    throw new Error("Invalid shared preset")
+                applyPresetSettings(sharedPreset.settings, null)
+                setSharedPresetNameToSaveAsCustomPreset(
+                    sharedPreset.presetName ?? "",
+                )
+            } catch {
+                toast.error("This share link is invalid or incomplete.")
+            }
+        }
+        importSharedPresetFromUrlHash()
+        window.addEventListener("hashchange", importSharedPresetFromUrlHash)
+        return () =>
+            window.removeEventListener(
+                "hashchange",
+                importSharedPresetFromUrlHash,
+            )
+    }, [applyPresetSettings])
+
     const onPresetSelected = (
         presetSettings: MarkovNamePresetSettings,
         customPresetName: string | null,
     ) => {
-        setNamesText(presetSettings.sampleNames.join("\n"))
-        setLengthRange(presetSettings.lengthRange)
-        setBlendedContextLength(presetSettings.blendedContextLength)
-        setRequiredNameStart(presetSettings.requiredNameStart)
-        setRequiredNameEnd(presetSettings.requiredNameEnd)
-        setLoadedCustomPresetName(customPresetName)
+        applyPresetSettings(presetSettings, customPresetName)
         setIsPresetsPanelOpen(false)
+    }
+
+    const copyShareLink = async () => {
+        try {
+            const sharedPreset: SharedPreset = {
+                presetName: loadedCustomPresetName,
+                settings: {
+                    sampleNames: trainingNames,
+                    lengthRange,
+                    blendedContextLength,
+                    requiredNameStart,
+                    requiredNameEnd,
+                },
+            }
+            const hashParameters = new URLSearchParams({
+                [SHARED_PRESET_URL_HASH_KEY]:
+                    await compressJsonToUrlSafeText(sharedPreset),
+            })
+            const shareLink = `${window.location.origin}${window.location.pathname}#${hashParameters}`
+            await navigator.clipboard.writeText(shareLink)
+            if (shareLink.length > SHARE_LINK_LENGTH_WARNING_THRESHOLD)
+                toast.warning(
+                    `Link copied, but it is long (${shareLink.length} characters). Some apps may cut it off.`,
+                )
+            else toast.success("Share link copied!")
+        } catch {
+            toast.error("Could not copy the share link.")
+        }
     }
 
     const saveCustomPreset = (presetName: string) => {
@@ -337,7 +447,7 @@ const NameGeneratorV3: React.FC = () => {
                         <img
                             src={folderIcon}
                             alt=""
-                            className={styles["presets-button-icon"]}
+                            className={styles["header-image-icon"]}
                         />
                     </button>
                     <button
@@ -357,6 +467,17 @@ const NameGeneratorV3: React.FC = () => {
                             <path d="M7 3v5h8V3" />
                             <rect x="7" y="13" width="10" height="8" />
                         </svg>
+                    </button>
+                    <button
+                        className={styles["header-icon-button"]}
+                        aria-label="Copy share link"
+                        onClick={copyShareLink}
+                    >
+                        <img
+                            src={shareIcon}
+                            alt=""
+                            className={styles["header-image-icon"]}
+                        />
                     </button>
                 </div>
                 <button
@@ -390,6 +511,28 @@ const NameGeneratorV3: React.FC = () => {
                     }
                     onSubmit={saveCustomPreset}
                     onClose={() => setIsSavePresetDialogOpen(false)}
+                />
+            )}
+            {sharedPresetNameToSaveAsCustomPreset !== null && (
+                <TextInputDialog
+                    title="Save shared preset"
+                    inputLabel="Preset name"
+                    initialText={sharedPresetNameToSaveAsCustomPreset}
+                    submitButtonLabel="Save"
+                    getWarningMessage={(presetName) =>
+                        customPresets.some(
+                            (preset) => preset.label === presetName,
+                        )
+                            ? "This will replace the existing preset."
+                            : null
+                    }
+                    onSubmit={(presetName) => {
+                        saveCustomPreset(presetName)
+                        setSharedPresetNameToSaveAsCustomPreset(null)
+                    }}
+                    onClose={() =>
+                        setSharedPresetNameToSaveAsCustomPreset(null)
+                    }
                 />
             )}
             {presetNameToDelete !== null && (
@@ -540,6 +683,11 @@ const NameGeneratorV3: React.FC = () => {
                     </label>
                 </div>
             </div>
+            <ToastContainer
+                position="top-center"
+                autoClose={3000}
+                hideProgressBar
+            />
         </div>
     )
 }
