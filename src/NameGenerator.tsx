@@ -134,8 +134,8 @@ const NameGenerator: React.FC = () => {
                     }}
                 />
             </header>
-            <div className={styles["scrollable-container"]}>
-                <div className={styles["scrollable-content"]}>
+            <div className={styles["input-fields-column"]}>
+                <div className={styles["input-fields-padding"]}>
                     <div className={styles["field-container"]}>
                         <NumberInput
                             name="Min Length"

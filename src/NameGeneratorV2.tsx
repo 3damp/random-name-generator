@@ -50,8 +50,8 @@ const NameGeneratorV2: React.FC = () => {
             <header className={styles["generated-names-display"]}>
                 <h1>{name}</h1>
             </header>
-            <div className={styles["scrollable-container"]}>
-                <div className={styles["scrollable-content"]}>
+            <div className={styles["input-fields-column"]}>
+                <div className={styles["input-fields-padding"]}>
                     <div className={styles["field-container"]}>
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                             <label>Style</label>

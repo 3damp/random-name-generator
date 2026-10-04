@@ -265,6 +265,7 @@ const NameGeneratorV3: React.FC = () => {
                 ),
             ),
         )
+        window.scrollTo({ top: 0, behavior: "smooth" })
     }
 
     const updateLengthRange = (changes: Partial<NameLengthRange>) => {
@@ -576,8 +577,8 @@ const NameGeneratorV3: React.FC = () => {
                     </div>
                 )}
             </section>
-            <div className={styles["scrollable-container"]}>
-                <div className={styles["scrollable-content"]}>
+            <div className={styles["input-fields-column"]}>
+                <div className={styles["input-fields-padding"]}>
                     <div className={styles["field-container"]}>
                         <NumberInput
                             name="Min Length"
